@@ -10,6 +10,7 @@ class CustomTextField extends StatefulWidget {
   final bool enable;
   final FocusNode? focusNode;
   final FocusNode? nextFocusNode;
+  final VoidCallback? onTap;
 
   const CustomTextField({
     Key? key,
@@ -22,6 +23,7 @@ class CustomTextField extends StatefulWidget {
     this.enable = true,
     this.focusNode,
     this.nextFocusNode,
+    this.onTap
   }) : super(key: key);
 
   @override

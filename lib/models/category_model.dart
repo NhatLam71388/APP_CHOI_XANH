@@ -9,4 +9,5 @@ final Map<int, List<String>> categoryModules = {
   35283: ['api','sanpham','module'],  //Máy lạnh
   35280: ['api','sanpham','module'],  //Tivi
   35285: ['api','sanpham','module'],  //X
+  35028: ['api','tintuc','module'],  //X
 };

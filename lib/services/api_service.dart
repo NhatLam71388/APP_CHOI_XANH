@@ -11,7 +11,7 @@ class APIService {
   static const String loginUrl = '$baseUrl/ww1/userlogin.asp';
 
   static Future<List<String>> fetchProductImages(String productId) async {
-    final uri = Uri.parse('https://demochung.125.atoz.vn/ww2/tinhnang.hinhanh.idpart.asp').replace(
+    final uri = Uri.parse('$baseUrl/ww2/tinhnang.hinhanh.idpart.asp').replace(
       queryParameters: {'id': productId},
     );
     print('Fetching product images from: $uri');
@@ -36,7 +36,7 @@ class APIService {
   }
 
   static Future<String> _fetchCategoryTitle(int categoryId) async {
-    final uri = Uri.parse('https://demochung.125.atoz.vn/ww2/app.menu.dautrang.asp');
+    final uri = Uri.parse('$baseUrl/ww2/app.menu.dautrang.asp');
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
@@ -67,7 +67,7 @@ class APIService {
     required String idfilter,
   }) async {
     final id3 = idfilter.isEmpty ? '' : ',n$idfilter';
-    final url = 'https://demochung.125.atoz.vn/ww2/module.laytimkiem.banhang.asp?id=$categoryId&id2=&id3=${Uri.encodeQueryComponent(id3)}&pageid=1';
+    final url = '$baseUrl/ww2/module.laytimkiem.banhang.asp?id=$categoryId&id2=&id3=${Uri.encodeQueryComponent(id3)}&pageid=1';
 
     print('Query params: {id: $categoryId, id2: , id3: $id3, pageid: 1}');
     print('Fetching products from: $url');
@@ -133,7 +133,7 @@ class APIService {
   }) async {
     try {
       final uri = Uri.parse(
-        'https://demochung.125.atoz.vn/ww2/module.$modelType.chitiet.tinlienquan.asp',
+        '$baseUrl/ww2/module.$modelType.chitiet.tinlienquan.asp',
       ).replace(
         queryParameters: {
           'id': id,
@@ -249,7 +249,7 @@ class APIService {
   }
 
   static Future<List<dynamic>> loadComments(String id) async {
-    final uri = Uri.parse('https://demochung.125.atoz.vn/ww2/module.tintuc.chitiet.lienquan.asp').replace(
+    final uri = Uri.parse('$baseUrl/ww2/module.tintuc.chitiet.lienquan.asp').replace(
       queryParameters: {
         'id': id,
         'sl': '30',
@@ -282,7 +282,7 @@ class APIService {
   }
 
   static Future<List<Map<String, dynamic>>> searchSanPham(String keyword) async {
-    final uri = Uri.parse('https://demochung.125.atoz.vn/ww2/module.laytimkiem.banhang.asp').replace(
+    final uri = Uri.parse('$baseUrl/ww2/module.laytimkiem.banhang.asp').replace(
       queryParameters: {
         'id': '',
         'id2': keyword,
@@ -323,7 +323,7 @@ class APIService {
   }
 
   static Future<Map<String, dynamic>> getBoLocByCatalog(String idCatalog) async {
-    final uri = Uri.parse('https://demochung.125.atoz.vn/ww2/crm.boloc.master.asp').replace(
+    final uri = Uri.parse('$baseUrl/ww2/crm.boloc.master.asp').replace(
       queryParameters: {'id': idCatalog},
     );
     print('Filter API: $uri');
@@ -375,7 +375,7 @@ class APIService {
   }
 
   static Future<List<dynamic>> fetchBoLocChiTiet(String id) async {
-    final url = Uri.parse('https://demochung.125.atoz.vn/ww2/crm.boloc.chitiet.asp').replace(
+    final url = Uri.parse('$baseUrl/ww2/crm.boloc.chitiet.asp').replace(
       queryParameters: {'id': id},
     );
     print('Filter detail API: $url');
@@ -416,7 +416,7 @@ class APIService {
       String productId,
       Function(List<String>) getDanhSachHinh) async {
     final String url =
-        'https://demochung.125.atoz.vn/ww2/module.$danhmuc.chitiet.asp?id=$productId';
+        '$baseUrl/ww2/module.$danhmuc.chitiet.asp?id=$productId';
     print('Fetching product details from: $url');
     try {
       final response = await http.get(Uri.parse(url));

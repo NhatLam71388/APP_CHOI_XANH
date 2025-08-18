@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
+import '../../services/api_service.dart';
+
 class CommentCard extends StatelessWidget {
   final String nguoidang;
   final String ngaydang;
@@ -35,7 +37,7 @@ class CommentCard extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundImage: hinhdaidien.isNotEmpty
-                    ? NetworkImage('https://demochung.125.atoz.vn$hinhdaidien')
+                    ? NetworkImage('${APIService.baseUrl}$hinhdaidien')
                     : null,
                 child: hinhdaidien.isEmpty
                     ? const Icon(Icons.person, size: 20, color: Colors.grey)

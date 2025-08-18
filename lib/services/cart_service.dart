@@ -1,46 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/product_model.dart';
+import 'package:flutter_application_1/view/until/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:http/http.dart' as http;
-
-import '../view/until/until.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 
 class APICartService {
-  static const String baseUrl = 'https://demochung.125.atoz.vn';
-
-  // Hàm lấy cookie từ API
-  static Future<Map<String, String>> fetchCookies() async {
-    final uri = Uri.parse('$baseUrl/ww1/cookie.mabaogia.asp');
-    try {
-      final response = await http.get(uri, headers: {
-        'Accept': 'application/json',
-      }).timeout(Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonResponse = json.decode(response.body);
-        Map<String, String> cookies = {};
-        for (var item in jsonResponse) {
-          if (item is Map) {
-            item.forEach((key, value) {
-              cookies[key] = value.toString();
-            });
-          }
-        }
-        print('Cookies fetched: $cookies');
-        return cookies;
-      } else {
-        print('❌ Lỗi khi lấy cookie: ${response.statusCode}');
-        return {};
-      }
-    } catch (e) {
-      print('❌ Lỗi kết nối khi lấy cookie: $e');
-      return {};
-    }
-  }
-
   static Future<String?> addToCart({
     required String moduleType,
     required String? emailAddress,
@@ -48,98 +16,132 @@ class APICartService {
     required int productId,
     required ValueNotifier<int> cartitemCount,
     required int quantity,
+    String? idbg, // Thêm idbg để gửi trong cookie DathangMabaogia
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = await AuthService.isLoggedIn();
+    String? cartCookie = prefs.getString('cartCookie') ?? '';
+    String? wishlistCookie = prefs.getString('wishlistCookie') ?? '';
+
+    print('isLoggedIn: $isLoggedIn, emailAddress: $emailAddress, password: $password, productId: $productId, idbg: $idbg');
 
     try {
-      print('emailaddress: $emailAddress');
+      if (!isLoggedIn || emailAddress == null || password == null) {
+        // Handle unauthenticated user
+        final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+        List<dynamic> cartItems = json.decode(cartItemsJson);
+        final existingItemIndex = cartItems.indexWhere((item) => item['productId'] == productId);
 
-      if (isLoggedIn && emailAddress != null && password != null) {
-        final md5Password = AuthService.generateMd5(password);
-        final uri = Uri.parse(
-          '$baseUrl/ww1/save.addwishlist.asp?userid=$emailAddress&pass=$md5Password&id=$productId',
-        );
-
-        print('Add to cart URL (logged in): $uri');
-        final response = await http.get(uri, headers: {
-          'Accept': 'application/json',
-        }).timeout(Duration(seconds: 5));
-
-        print('Add to cart response status: ${response.statusCode}');
-        print('Add to cart response body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          final List<dynamic> jsonResponse = json.decode(response.body);
-          if (jsonResponse.isNotEmpty && jsonResponse[0] is Map && jsonResponse[0].containsKey('ThongBao')) {
-            final responseData = jsonResponse[0];
-            final thongbao = responseData['ThongBao']?.toString() ?? '';
-            final maloi = responseData['maloi']?.toString() ?? '0';
-            final cleanMessage = thongbao.replaceAll(RegExp(r'<[^>]+>'), '').trim();
-
-            if (maloi == '1' && thongbao.contains('Đưa công việc vào danh sách chờ nộp đơn')) {
-              // Cập nhật số lượng giỏ hàng
-              final cartItems = await fetchCartItemsById(emailAddress: emailAddress, cartitemCount: cartitemCount);
-              cartitemCount.value = cartItems.length;
-              showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã thêm vào giỏ hàng');
-              return null;
-            } else {
-              return cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại';
-            }
-          } else {
-            return 'Dữ liệu phản hồi không hợp lệ';
-          }
+        if (existingItemIndex != -1) {
+          // Update quantity if item already exists
+          cartItems[existingItemIndex]['quantity'] = quantity;
         } else {
-          return 'Lỗi máy chủ: ${response.statusCode}';
-        }
-      } else {
-        String? cartCookie = prefs.getString('cartCookie') ?? '';
-        if (cartCookie.isEmpty) {
-          final cookies = await fetchCookies();
-          cartCookie = cookies['DathangMabaogia'];
-          if (cartCookie == null) {
-            return 'Không thể lấy cookie giỏ hàng';
-          }
-          await prefs.setString('cartCookie', cartCookie);
+          // Add new item
+          cartItems.add({
+            'productId': productId,
+            'quantity': quantity,
+            'moduleType': moduleType,
+          });
         }
 
-        final uri = Uri.parse(
-          '$baseUrl/ww1/addgiohang.asp?IDPart=$productId&id=$cartCookie&sl=$quantity',
-        );
+        await prefs.setString('local_cart_items', json.encode(cartItems));
+        cartitemCount.value = cartItems.length;
+        showToast('Đã thêm vào giỏ hàng (chưa đăng nhập)', backgroundColor: Colors.green);
+        return null;
+      }
 
-        print('Add to cart URL (not logged in): $uri');
-        final response = await http.get(uri, headers: {
-          'Accept': 'application/json',
-          'Cookie': 'DathangMabaogia=$cartCookie',
-        }).timeout(Duration(seconds: 5));
+      // Lấy cookie DathangMabaogia nếu chưa có
+      if (cartCookie.isEmpty) {
+        final cookies = await AuthService.fetchCookies();
+        cartCookie = cookies['DathangMabaogia'];
+        if (cartCookie == null) {
+          print('❌ Không thể lấy cookie DathangMabaogia');
+          showToast('Không thể thêm sản phẩm vào giỏ hàng', backgroundColor: Colors.red);
+          return 'Không thể lấy cookie giỏ hàng';
+        }
+        await prefs.setString('cartCookie', cartCookie);
+      }
 
-        print('Add to cart response status: ${response.statusCode}');
-        print('Add to cart response body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          final responseData = json.decode(response.body);
-          if (responseData is Map && responseData.containsKey('thongbao')) {
-            final thongbao = responseData['thongbao']?.toString() ?? '';
-            final cleanMessage = thongbao.replaceAll(RegExp(r'<[^>]+>'), '').trim();
-
-            if (thongbao.contains('Đã đưa') && thongbao.contains('vào giỏ hàng')) {
-              if (responseData.containsKey('sl')) {
-                cartitemCount.value = responseData['sl'] as int;
-              }
-              showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã thêm vào giỏ hàng');
-              return null;
-            } else {
-              return cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại';
-            }
-          } else {
-            return 'Dữ liệu phản hồi không hợp lệ';
-          }
+      // Lấy cookie WishlistMabaogia nếu chưa có
+      if (wishlistCookie.isEmpty) {
+        final cookies = await AuthService.fetchCookies();
+        wishlistCookie = cookies['WishlistMabaogia'];
+        if (wishlistCookie == null) {
+          print('❌ Không thể lấy cookie WishlistMabaogia');
+          wishlistCookie = '';
         } else {
-          return 'Lỗi máy chủ: ${response.statusCode}';
+          await prefs.setString('wishlistCookie', wishlistCookie);
         }
       }
+
+      final md5Password = AuthService.generateMd5(password);
+      final uri = Uri.parse(
+        '${APIService.baseUrl}/ww1/save.addcart.asp?userid=$emailAddress&pass=$md5Password&id=$productId',
+      );
+
+      final cookies = await AuthService.cookieJar.loadForRequest(uri);
+      // Loại bỏ cookie DathangMabaogia và WishlistMabaogia hiện có
+      final filteredCookies = cookies
+          .where((c) => c.name != 'DathangMabaogia' && c.name != 'WishlistMabaogia')
+          .toList();
+      // Thêm cookie DathangMabaogia và WishlistMabaogia
+      filteredCookies.add(Cookie('DathangMabaogia', idbg ?? cartCookie));
+      filteredCookies.add(Cookie('WishlistMabaogia', wishlistCookie));
+      final headers = {
+        'Accept': 'application/json',
+        'Cookie': filteredCookies.map((c) => '${c.name}=${c.value}').join('; '),
+      };
+
+      print('Add to cart URL: $uri');
+      print('Headers: $headers');
+      print('Using idbg: ${idbg ?? cartCookie} for DathangMabaogia cookie');
+      print('Using wishlistCookie: $wishlistCookie for WishlistMabaogia cookie');
+
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 5));
+
+      print('Add to cart response status: ${response.statusCode}');
+      print('Add to cart response body: ${response.body}');
+
+      // Lưu cookie mới chỉ nếu không phải DathangMabaogia hoặc WishlistMabaogia
+      if (response.headers.containsKey('set-cookie')) {
+        final cookie = Cookie.fromSetCookieValue(response.headers['set-cookie']!.split(';')[0]);
+        if (cookie.name != 'DathangMabaogia' && cookie.name != 'WishlistMabaogia') {
+          await AuthService.cookieJar.saveFromResponse(uri, [cookie]);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        if (jsonResponse.isNotEmpty && jsonResponse[0] is Map && jsonResponse[0].containsKey('ThongBao')) {
+          final responseData = jsonResponse[0];
+          final thongbao = responseData['ThongBao']?.toString() ?? '';
+          final maloi = responseData['maloi']?.toString() ?? '0';
+          final cleanMessage = thongbao.replaceAll(RegExp(r'<[^>]+>'), '').trim();
+
+          if (maloi == '1' && thongbao.contains('Đưa công việc vào danh sách chờ nộp đơn')) {
+            final cartItems = await fetchCartItemsById(
+              emailAddress: emailAddress,
+              cartitemCount: cartitemCount,
+              password: password,
+            );
+            cartitemCount.value = cartItems.length;
+            showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã thêm vào giỏ hàng', backgroundColor: Colors.green);
+            return null;
+          } else {
+            showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại', backgroundColor: Colors.red);
+            return cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại';
+          }
+        } else {
+          showToast('Dữ liệu phản hồi không hợp lệ', backgroundColor: Colors.red);
+          return 'Dữ liệu phản hồi không hợp lệ';
+        }
+      } else {
+        showToast('Lỗi máy chủ: ${response.statusCode}', backgroundColor: Colors.red);
+        return 'Lỗi máy chủ: ${response.statusCode}';
+      }
     } catch (e) {
-      print('Exception: $e');
+      print('Exception in addToCart: $e');
+      showToast('Lỗi xử lý dữ liệu từ máy chủ', backgroundColor: Colors.red);
       return 'Lỗi xử lý dữ liệu từ máy chủ';
     }
   }
@@ -149,194 +151,175 @@ class APICartService {
     ValueNotifier<int>? cartitemCount,
     String? password,
   }) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = await AuthService.isLoggedIn();
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = await AuthService.isLoggedIn();
+    print('isLoggedIn: $isLoggedIn, emailAddress: $emailAddress, password: $password');
 
-      if (isLoggedIn && emailAddress != null && password != null) {
-        // Trường hợp đã đăng nhập
-        final md5Password = AuthService.generateMd5(password);
-        final uri = Uri.parse(
-          '$baseUrl/ww1/member.1/Quanlydanhmucsanphamgiohang.asp?userid=$emailAddress&pass=$md5Password&pageid=all',
+    if (!isLoggedIn || emailAddress == null || password == null) {
+      // Handle unauthenticated user
+      final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+      final List<dynamic> cartItems = json.decode(cartItemsJson);
+      final cachedImages = prefs.getString('cart_images') ?? '{}';
+      final imageCache = json.decode(cachedImages) as Map<String, dynamic>;
+
+      List<CartItemModel> items = [];
+      for (var item in cartItems) {
+        final id = item['productId'].toString();
+        final quantity = item['quantity'] ?? 1;
+        final moduleType = item['moduleType'] ?? 'sanpham';
+
+        String? image = imageCache[id];
+        if (image == null || image.isEmpty) {
+          final productDetail = await APIService.fetchProductDetail(
+            APIService.baseUrl,
+            moduleType,
+            id,
+                (_) => [],
+          );
+          image = productDetail != null && productDetail['hinhdaidien'] != null
+              ? '${APIService.baseUrl}${productDetail['hinhdaidien']}'
+              : 'https://via.placeholder.com/150';
+
+          imageCache[id] = image;
+          await prefs.setString('cart_images', json.encode(imageCache));
+        }
+
+        print('🛒 SP (Local): $id | SL: $quantity | Image: $image');
+
+        items.add(CartItemModel(
+          id: id,
+          idbg: '',
+          name: 'Sản phẩm $id', // Placeholder name, can be fetched if needed
+          price: 0.0, // Placeholder price, can be fetched if needed
+          moduleType: moduleType,
+          image: image,
+          quantity: quantity,
+          isSelect: false,
+          categoryId: 0,
+        ));
+      }
+
+      if (cartitemCount != null) {
+        cartitemCount.value = items.length;
+      }
+      return items;
+    }
+
+    try {
+      final md5Password = AuthService.generateMd5(password);
+      final uri = Uri.parse(
+        '${APIService.baseUrl}/ww1/member.1/Quanlydanhmucsanphamgiohang.asp?userid=$emailAddress&pass=$md5Password&pageid=all',
+      );
+
+      final cookies = await AuthService.cookieJar.loadForRequest(uri);
+      final headers = {
+        'Accept': 'application/json',
+        if (cookies.isNotEmpty) 'Cookie': cookies.map((c) => '${c.name}=${c.value}').join('; '),
+      };
+
+      print('Fetch cart items URL: $uri');
+      print('Headers: $headers');
+
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 5));
+
+      print('Fetch cart items response status: ${response.statusCode}');
+      print('Fetch cart items response body: ${response.body}');
+
+      // Lưu cookie mới chỉ nếu không phải DathangMabaogia
+      if (response.headers.containsKey('set-cookie')) {
+        final cookie = Cookie.fromSetCookieValue(response.headers['set-cookie']!.split(';')[0]);
+        if (cookie.name != 'DathangMabaogia') {
+          await AuthService.cookieJar.saveFromResponse(uri, [cookie]);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        String cleanedResponse = response.body;
+        cleanedResponse = cleanedResponse.replaceAllMapped(
+          RegExp(r'(?<=tieude":\s*")[^"]*?(")(?=[^"]*?",)'),
+              (match) => match.group(0)!.replaceAll('"', '\\"'),
         );
 
-        print('Fetch cart items URL (logged in): $uri');
-        final response = await http.get(uri, headers: {
-          'Accept': 'application/json',
-        }).timeout(Duration(seconds: 5));
+        print('Cleaned JSON response: $cleanedResponse');
 
-        print('Fetch cart items response status: ${response.statusCode}');
-        print('Fetch cart items response body: ${response.body}');
+        final List<dynamic> jsonResponse;
+        try {
+          jsonResponse = json.decode(cleanedResponse);
+        } catch (e) {
+          print('❌ Lỗi phân tích JSON: $e');
+          showToast('Lỗi dữ liệu giỏ hàng, vui lòng thử lại', backgroundColor: Colors.red);
+          if (cartitemCount != null) {
+            cartitemCount.value = 0;
+          }
+          return [];
+        }
 
-        if (response.statusCode == 200) {
-          // Làm sạch JSON trước khi parse
-          String cleanedResponse = response.body;
-          // Escape tất cả dấu nháy kép trong chuỗi tieude, ngoại trừ các dấu nháy kép hợp lệ của JSON
-          cleanedResponse = cleanedResponse.replaceAllMapped(
-            RegExp(r'(?<=tieude":\s*")[^"]*?(")(?=[^"]*?",)'),
-                (match) => match.group(0)!.replaceAll('"', '\\"'),
-          );
+        if (jsonResponse.isNotEmpty && jsonResponse[0] is Map && jsonResponse[0].containsKey('data')) {
+          final List<dynamic> data = jsonResponse[0]['data'];
 
-          print('Cleaned JSON response: $cleanedResponse');
+          final cachedImages = prefs.getString('cart_images') ?? '{}';
+          final imageCache = json.decode(cachedImages) as Map<String, dynamic>;
 
-          final List<dynamic> jsonResponse;
-          try {
-            jsonResponse = json.decode(cleanedResponse);
-          } catch (e) {
-            print('❌ Lỗi phân tích JSON sau khi làm sạch: $e');
-            showToast('Lỗi dữ liệu giỏ hàng, vui lòng thử lại', backgroundColor: Colors.red);
-            if (cartitemCount != null) {
-              cartitemCount.value = 0;
+          List<CartItemModel> items = [];
+          for (var item in data) {
+            final id = item['id']?.toString() ?? '';
+            final idbg = item['idbg']?.toString() ?? '';
+            final name = item['tieude']?.toString() ?? '';
+            final price = double.tryParse(item['gia']?.toString() ?? '0') ?? 0;
+            final quantity = int.tryParse(item['soluong']?.toString() ?? '1') ?? 1;
+            final moduleType = 'sanpham';
+
+            String? image = imageCache[id];
+            if (image == null || image.isEmpty) {
+              final productDetail = await APIService.fetchProductDetail(
+                APIService.baseUrl,
+                'sanpham',
+                id,
+                    (_) => [],
+              );
+              image = productDetail != null && productDetail['hinhdaidien'] != null
+                  ? '${APIService.baseUrl}${productDetail['hinhdaidien']}'
+                  : 'https://via.placeholder.com/150';
+
+              imageCache[id] = image;
+              await prefs.setString('cart_images', json.encode(imageCache));
             }
-            return [];
+
+            print('🛒 SP: $name | ID: $id | IDBG: $idbg | SL: $quantity | Image: $image');
+
+            items.add(CartItemModel(
+              id: id,
+              idbg: idbg,
+              name: name,
+              price: price,
+              moduleType: moduleType,
+              image: image,
+              quantity: quantity,
+              isSelect: false,
+              categoryId: 0,
+            ));
           }
 
-          if (jsonResponse.isNotEmpty && jsonResponse[0] is Map && jsonResponse[0].containsKey('data')) {
-            final List<dynamic> data = jsonResponse[0]['data'];
-
-            // Lưu trữ hinhdaidien vào SharedPreferences
-            final cachedImages = prefs.getString('cart_images') ?? '{}';
-            final imageCache = json.decode(cachedImages) as Map<String, dynamic>;
-
-            List<CartItemModel> items = [];
-            for (var item in data) {
-              final id = item['id']?.toString() ?? '';
-              final name = item['tieude']?.toString() ?? '';
-              final price = double.tryParse(item['gia']?.toString() ?? '0') ?? 0;
-              final quantity = int.tryParse(item['soluong']?.toString() ?? '1') ?? 1;
-              final moduleType = 'sanpham';
-
-              String? image = imageCache[id];
-              // Nếu không có ảnh trong cache, gọi API chi tiết sản phẩm
-              if (image == null || image.isEmpty) {
-                final productDetail = await APIService.fetchProductDetail(
-                  baseUrl,
-                  'sanpham',
-                  id,
-                      (_) => [], // Truyền hàm rỗng vì không cần danh sách hình
-                );
-                image = productDetail != null && productDetail['hinhdaidien'] != null
-                    ? '$baseUrl${productDetail['hinhdaidien']}'
-                    : 'https://via.placeholder.com/150';
-
-                // Lưu ảnh vào cache
-                imageCache[id] = image;
-                await prefs.setString('cart_images', json.encode(imageCache));
-              }
-
-              print('🛒 SP: $name | ID: $id | SL: $quantity | Image: $image');
-
-              items.add(CartItemModel(
-                id: id,
-                name: name,
-                price: price,
-                moduleType: moduleType,
-                image: image,
-                quantity: quantity,
-                categoryId: 0,
-              ));
-            }
-
-            if (cartitemCount != null) {
-              cartitemCount.value = items.length;
-            }
-
-            return items;
-          } else {
-            print('❌ API trả về dữ liệu không hợp lệ (logged in)');
-            showToast('Dữ liệu giỏ hàng không hợp lệ', backgroundColor: Colors.red);
-            if (cartitemCount != null) {
-              cartitemCount.value = 0;
-            }
-            return [];
+          if (cartitemCount != null) {
+            cartitemCount.value = items.length;
           }
+
+          return items;
         } else {
-          print('❌ Lỗi máy chủ: ${response.statusCode}');
-          showToast('Lỗi máy chủ: ${response.statusCode}', backgroundColor: Colors.red);
+          print('❌ API trả về dữ liệu không hợp lệ');
+          showToast('Dữ liệu giỏ hàng không hợp lệ', backgroundColor: Colors.red);
           if (cartitemCount != null) {
             cartitemCount.value = 0;
           }
           return [];
         }
       } else {
-        // Trường hợp chưa đăng nhập
-        String? cartCookie = prefs.getString('cartCookie') ?? '';
-        if (cartCookie.isEmpty) {
-          final cookies = await fetchCookies();
-          cartCookie = cookies['DathangMabaogia'];
-          if (cartCookie == null) {
-            print('❌ Không thể lấy cookie giỏ hàng');
-            showToast('Không thể lấy cookie giỏ hàng', backgroundColor: Colors.red);
-            if (cartitemCount != null) {
-              cartitemCount.value = 0;
-            }
-            return [];
-          }
-          await prefs.setString('cartCookie', cartCookie);
+        print('❌ Lỗi máy chủ: ${response.statusCode}');
+        showToast('Lỗi máy chủ: ${response.statusCode}', backgroundColor: Colors.red);
+        if (cartitemCount != null) {
+          cartitemCount.value = 0;
         }
-
-        final uri = Uri.parse('$baseUrl/ww1/giohanghientai.asp');
-        print('Fetch cart items URL (not logged in): $uri');
-        print('Cart cookie: $cartCookie');
-
-        final response = await http.get(uri, headers: {
-          'Accept': 'application/json',
-          'Cookie': 'DathangMabaogia=$cartCookie',
-        }).timeout(Duration(seconds: 5));
-
-        print('Fetch cart items response status: ${response.statusCode}');
-        print('Fetch cart items response body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          final jsonResponse = json.decode(response.body);
-
-          if (jsonResponse is Map && jsonResponse.containsKey('items') && jsonResponse['items'] is List) {
-            final List<dynamic> data = jsonResponse['items'];
-
-            List<CartItemModel> items = data.map((item) {
-              final id = item['id']?.toString() ?? '';
-              final name = item['partName']?.toString() ?? '';
-              final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
-              final moduleType = 'sanpham';
-              final image = item['image'] != null
-                  ? '$baseUrl${item['image']}'
-                  : 'https://via.placeholder.com/150';
-              final quantity = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-
-              print('🛒 SP: $name | ID: $id | SL: $quantity | Image: $image');
-
-              return CartItemModel(
-                id: id,
-                name: name,
-                price: price,
-                moduleType: moduleType,
-                image: image,
-                quantity: quantity,
-                categoryId: 0,
-              );
-            }).toList();
-
-            if (cartitemCount != null) {
-              cartitemCount.value = items.length;
-            }
-
-            return items;
-          } else {
-            print('❌ API trả về dữ liệu không hợp lệ');
-            showToast('Dữ liệu giỏ hàng không hợp lệ', backgroundColor: Colors.red);
-            if (cartitemCount != null) {
-              cartitemCount.value = 0;
-            }
-            return [];
-          }
-        } else {
-          print('❌ Lỗi máy chủ: ${response.statusCode}');
-          showToast('Lỗi máy chủ: ${response.statusCode}', backgroundColor: Colors.red);
-          if (cartitemCount != null) {
-            cartitemCount.value = 0;
-          }
-          return [];
-        }
+        return [];
       }
     } catch (e) {
       print('❌ Lỗi kết nối hoặc parse JSON: $e');
@@ -348,14 +331,195 @@ class APICartService {
     }
   }
 
+  static Future<bool> removeCartItem({
+    required String emailAddress,
+    required String productId,
+    required ValueNotifier<int> cartitemCount,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = await AuthService.isLoggedIn();
+
+    if (!isLoggedIn) {
+      // Handle unauthenticated user
+      final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+      List<dynamic> cartItems = json.decode(cartItemsJson);
+      cartItems.removeWhere((item) => item['productId'].toString() == productId);
+      await prefs.setString('local_cart_items', json.encode(cartItems));
+      cartitemCount.value = cartItems.length;
+      showToast('Đã xóa sản phẩm khỏi giỏ hàng (chưa đăng nhập)', backgroundColor: Colors.green);
+      return true;
+    }
+
+    try {
+      final cartItems = await fetchCartItemsById(
+        emailAddress: emailAddress,
+        cartitemCount: cartitemCount,
+        password: await AuthService.getPassword(),
+      );
+
+      final cartItem = cartItems.firstWhere(
+            (item) => item.id == productId,
+        orElse: () => CartItemModel(
+          id: '',
+          idbg: '',
+          name: '',
+          price: 0,
+          moduleType: '',
+          image: '',
+          quantity: 0,
+          isSelect: false,
+          categoryId: 0,
+        ),
+      );
+
+      if (cartItem.idbg.isEmpty) {
+        print('Không tìm thấy idbg cho sản phẩm: $productId');
+        showToast('Không tìm thấy sản phẩm trong giỏ hàng', backgroundColor: Colors.red);
+        return false;
+      }
+
+      final password = await AuthService.getPassword();
+      final md5Password = AuthService.generateMd5(password);
+      print('Password used: $password, MD5: $md5Password');
+
+      final queryParameters = {
+        'userid': emailAddress,
+        'pass': md5Password,
+        'id': productId,
+      };
+
+      final uri = Uri.parse('${APIService.baseUrl}/ww1/remove.listcart.asp').replace(
+        queryParameters: queryParameters,
+      );
+
+      final cookies = await AuthService.cookieJar.loadForRequest(uri);
+      final headers = {
+        'Accept': 'application/json',
+        'Cookie': 'DathangMabaogia=${cartItem.idbg}; ${cookies.map((c) => '${c.name}=${c.value}').join('; ')}',
+      };
+
+      print('Remove cart item URL: $uri');
+      print('Headers: $headers');
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
+
+      print('Remove cart item response status: ${response.statusCode}');
+      print('Remove cart item response body: ${response.body}');
+
+      // Không lưu cookie DathangMabaogia từ phản hồi để giữ cookie ban đầu
+      if (response.headers.containsKey('set-cookie')) {
+        final cookie = Cookie.fromSetCookieValue(response.headers['set-cookie']!.split(';')[0]);
+        if (cookie.name != 'DathangMabaogia') {
+          await AuthService.cookieJar.saveFromResponse(uri, [cookie]);
+        }
+      }
+
+      if (response.statusCode == 200) {
+        try {
+          final jsonResponse = json.decode(response.body);
+          if (jsonResponse is List && jsonResponse.isNotEmpty && jsonResponse[0] is Map && jsonResponse[0].containsKey('ThongBao')) {
+            final thongbao = jsonResponse[0]['ThongBao']?.toString() ?? '';
+            final maloi = jsonResponse[0]['maloi']?.toString() ?? '0';
+            if (maloi == '1' || thongbao.contains('xóa khỏi danh mục cart')) {
+              cartitemCount.value = (cartitemCount.value > 0) ? cartitemCount.value - 1 : 0;
+              print('Xóa sản phẩm thành công: $productId');
+              showToast('Đã xóa sản phẩm khỏi giỏ hàng', backgroundColor: Colors.green);
+              return true;
+            } else {
+              print('API trả về thông báo không mong đợi: $thongbao');
+              showToast(thongbao.isNotEmpty ? thongbao : 'Xóa sản phẩm thất bại', backgroundColor: Colors.red);
+              return false;
+            }
+          } else {
+            print('Dữ liệu phản hồi không hợp lệ: ${response.body}');
+            showToast('Dữ liệu phản hồi không hợp lệ', backgroundColor: Colors.red);
+            return false;
+          }
+        } catch (e) {
+          print('Lỗi phân tích JSON: $e');
+          showToast('Lỗi xử lý dữ liệu', backgroundColor: Colors.red);
+          return false;
+        }
+      } else {
+        print('Lỗi HTTP: ${response.statusCode}');
+        showToast('Lỗi máy chủ: ${response.statusCode}', backgroundColor: Colors.red);
+        return false;
+      }
+    } catch (e) {
+      print('Lỗi kết nối khi xóa sản phẩm: $e');
+      showToast('Lỗi kết nối khi xóa sản phẩm', backgroundColor: Colors.red);
+      return false;
+    }
+  }
+
+  static Future<bool> syncLocalCartToServer({
+    required String emailAddress,
+    required String password,
+    required ValueNotifier<int> cartitemCount,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+    final List<dynamic> localCartItems = json.decode(cartItemsJson);
+
+    if (localCartItems.isEmpty) {
+      return true; // No items to sync
+    }
+
+    bool allSuccess = true;
+    for (var item in localCartItems) {
+      final result = await addToCart(
+        moduleType: item['moduleType'] ?? 'sanpham',
+        emailAddress: emailAddress,
+        password: password,
+        productId: item['productId'],
+        cartitemCount: cartitemCount,
+        quantity: item['quantity'] ?? 1,
+      );
+      if (result != null) {
+        allSuccess = false; // If any item fails to sync, mark as false
+      }
+    }
+
+    if (allSuccess) {
+      // Clear local cart after successful sync
+      await prefs.setString('local_cart_items', '[]');
+      showToast('Đã đồng bộ giỏ hàng lên server', backgroundColor: Colors.green);
+    } else {
+      showToast('Có lỗi khi đồng bộ một số sản phẩm', backgroundColor: Colors.red);
+    }
+
+    return allSuccess;
+  }
+
   static Future<bool> updateCartItemQuantity({
     required String emailAddress,
     required int productId,
     required int newQuantity,
   }) async {
-    final uri = Uri.parse(
-      '${APIService.baseUrl}/api/update.quantity.php',
-    );
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = await AuthService.isLoggedIn();
+
+    if (!isLoggedIn) {
+      // Handle unauthenticated user
+      final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+      List<dynamic> cartItems = json.decode(cartItemsJson);
+      final existingItemIndex = cartItems.indexWhere((item) => item['productId'] == productId);
+
+      if (existingItemIndex != -1) {
+        cartItems[existingItemIndex]['quantity'] = newQuantity;
+        await prefs.setString('local_cart_items', json.encode(cartItems));
+        showToast('Đã cập nhật số lượng (chưa đăng nhập)', backgroundColor: Colors.green);
+        return true;
+      } else {
+        showToast('Không tìm thấy sản phẩm trong giỏ hàng', backgroundColor: Colors.red);
+        return false;
+      }
+    }
+
+    final uri = Uri.parse('${APIService.baseUrl}/api/update.quantity.php');
 
     try {
       final response = await http.post(
@@ -386,95 +550,6 @@ class APICartService {
     }
   }
 
-  static Future<bool> removeCartItem({
-    required String emailAddress,
-    required String productId,
-    required ValueNotifier<int> cartitemCount,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = await AuthService.isLoggedIn();
-
-    try {
-      final queryParameters = {
-        'choixanh': 'xoasanpham',
-        'idpart': productId,
-      };
-
-      final uri = Uri.parse('$baseUrl/cart/xoa.asp').replace(
-        queryParameters: queryParameters,
-      );
-
-      print('Remove cart item URL: $uri');
-
-      final headers = {
-        'Accept': 'application/json',
-      };
-
-      // Thêm cookie nếu chưa đăng nhập
-      if (!isLoggedIn) {
-        String? cartCookie = prefs.getString('cartCookie') ?? '';
-        if (cartCookie.isEmpty) {
-          final cookies = await fetchCookies();
-          cartCookie = cookies['DathangMabaogia'];
-          if (cartCookie == null) {
-            print('❌ Không thể lấy cookie giỏ hàng');
-            return false;
-          }
-          await prefs.setString('cartCookie', cartCookie);
-        }
-        headers['Cookie'] = 'DathangMabaogia=$cartCookie';
-      }
-
-      final response = await http.get(
-        uri,
-        headers: headers,
-      ).timeout(Duration(seconds: 5));
-
-      print('Remove cart item response status: ${response.statusCode}');
-      print('Remove cart item response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        try {
-          // Loại bỏ tiền tố "var info = " và sửa JSON không chuẩn
-          String cleanedResponse = response.body.replaceFirst('var info = ', '');
-          // Thêm dấu nháy kép quanh tên thuộc tính
-          cleanedResponse = cleanedResponse.replaceAllMapped(
-              RegExp(r'(\w+):'), (match) => '"${match[1]}":');
-          // Thay dấu nháy đơn thành dấu nháy kép cho giá trị chuỗi
-          cleanedResponse = cleanedResponse.replaceAll("'", '"');
-          // Loại bỏ dấu ; ở cuối nếu có
-          cleanedResponse = cleanedResponse.replaceAll(';', '');
-          print('Cleaned response: $cleanedResponse');
-
-          final jsonResponse = json.decode(cleanedResponse);
-          if (jsonResponse is Map && jsonResponse.containsKey('thongbao')) {
-            final thongbao = jsonResponse['thongbao']?.toString() ?? '';
-            if (thongbao.contains('Đã xóa')) {
-              cartitemCount.value = (cartitemCount.value > 0) ? cartitemCount.value - 1 : 0;
-              print('Xóa sản phẩm thành công: $productId');
-              return true;
-            } else {
-              print('API trả về thông báo không mong đợi: $thongbao');
-              return false;
-            }
-          } else {
-            print('Dữ liệu phản hồi không hợp lệ: $cleanedResponse');
-            return false;
-          }
-        } catch (e) {
-          print('Lỗi phân tích JSON: $e');
-          return false;
-        }
-      } else {
-        print('Lỗi HTTP: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      print('Lỗi kết nối khi xóa sản phẩm: $e');
-      return false;
-    }
-  }
-
   static Future<void> datHang({
     required String moduletype,
     required String customerName,
@@ -486,14 +561,9 @@ class APICartService {
     String? password,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = await AuthService.isLoggedIn();
-
-      // Tạo danh sách ID sản phẩm và số lượng
       final idParts = items.map((item) => item.id.toString()).join(',');
       final quantities = items.map((item) => item.quantity.toString()).join(',');
 
-      // Tạo URL với các tham số query
       final queryParameters = {
         'CustomerName': customerName,
         'Address': address,
@@ -504,42 +574,41 @@ class APICartService {
         'sl': quantities,
       };
 
-      final uri = Uri.parse('$baseUrl/cart/save.asp').replace(
+      final uri = Uri.parse('${APIService.baseUrl}/cart/save.asp').replace(
         queryParameters: queryParameters,
       );
 
       print('Order URL: $uri');
 
+      final cookies = await AuthService.cookieJar.loadForRequest(uri);
       final headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Content-Type': 'application/x-www-form-urlencoded',
+        if (cookies.isNotEmpty) 'Cookie': cookies.map((c) => '${c.name}=${c.value}').join('; '),
       };
-
-      // Thêm cookie nếu chưa đăng nhập
-      if (!isLoggedIn) {
-        String? cartCookie = prefs.getString('cartCookie') ?? '';
-        if (cartCookie.isEmpty) {
-          final cookies = await fetchCookies();
-          cartCookie = cookies['DathangMabaogia'];
-          if (cartCookie == null) {
-            throw Exception('Không thể lấy cookie giỏ hàng');
-          }
-          await prefs.setString('cartCookie', cartCookie);
-        }
-        headers['Cookie'] = 'DathangMabaogia=$cartCookie';
-      }
 
       final response = await http.get(
         uri,
         headers: headers,
-      ).timeout(Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 5));
 
       print('Order response status: ${response.statusCode}');
       print('Order response body: ${response.body}');
 
+      // Lưu cookie mới chỉ nếu không phải DathangMabaogia
+      if (response.headers.containsKey('set-cookie')) {
+        final cookie = Cookie.fromSetCookieValue(response.headers['set-cookie']!.split(';')[0]);
+        if (cookie.name != 'DathangMabaogia') {
+          await AuthService.cookieJar.saveFromResponse(uri, [cookie]);
+        }
+      }
+
       if (response.statusCode == 200) {
         if (response.body.contains('Cám ơn đã đặt hàng!')) {
           print('Đặt hàng thành công!');
+          // Clear local cart after successful order
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('local_cart_items', '[]');
           return;
         } else {
           print('API trả về phản hồi không mong đợi: ${response.body}');
@@ -556,9 +625,8 @@ class APICartService {
   }
 
   static Future<String?> cancelOrder({required String emailAddress, required String orderId}) async {
-    final uri = Uri.parse('$baseUrl/api/cancel.order.php');
+    final uri = Uri.parse('${APIService.baseUrl}/api/cancel.order.php');
     final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('emailAddress') ?? '';
 
     final bodyData = {
       'IDBG': orderId,
@@ -566,9 +634,15 @@ class APICartService {
     };
 
     try {
+      final cookies = await AuthService.cookieJar.loadForRequest(uri);
+      final headers = {
+        'Content-Type': 'application/json',
+        if (cookies.isNotEmpty) 'Cookie': cookies.map((c) => '${c.name}=${c.value}').join('; '),
+      };
+
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(bodyData),
       );
 
@@ -595,96 +669,72 @@ class APICartService {
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = await AuthService.isLoggedIn();
 
-    if (isLoggedIn && email.isNotEmpty) {
-      final md5Password = AuthService.generateMd5(prefs.getString('password') ?? '');
-      final uri = Uri.parse(
-        '$baseUrl/ww1/member.1/Quanlydanhmucsanphamgiohang.asp?userid=$email&pass=$md5Password&pageid=all',
-      );
+    if (!isLoggedIn || email.isEmpty) {
+      final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
+      final List<dynamic> cartItems = json.decode(cartItemsJson);
+      return cartItems.length;
+    }
 
-      print('Get cart count URL (logged in): $uri');
+    final md5Password = AuthService.generateMd5(prefs.getString('passWord') ?? '');
+    final uri = Uri.parse(
+      '${APIService.baseUrl}/ww1/member.1/Quanlydanhmucsanphamgiohang.asp?userid=$email&pass=$md5Password&pageid=all',
+    );
 
-      try {
-        final response = await http.get(
-          uri,
-          headers: {'Accept': 'application/json'},
-        ).timeout(Duration(seconds: 5));
+    final cookies = await AuthService.cookieJar.loadForRequest(uri);
+    final headers = {
+      'Accept': 'application/json',
+      if (cookies.isNotEmpty) 'Cookie': cookies.map((c) => '${c.name}=${c.value}').join('; '),
+    };
 
-        print('Get cart count response status: ${response.statusCode}');
-        print('Get cart count response body: ${response.body}');
+    print('Get cart count URL: $uri');
+    print('Headers: $headers');
 
-        if (response.statusCode == 200) {
-          // Làm sạch JSON trước khi parse
-          String cleanedResponse = response.body;
-          cleanedResponse = cleanedResponse.replaceAllMapped(
-            RegExp(r'(?<=tieude":\s*")[^"]*?(")(?=[^"]*?",)'),
-                (match) => match.group(0)!.replaceAll('"', '\\"'),
-          );
+    try {
+      final response = await http.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
 
-          print('Cleaned JSON response: $cleanedResponse');
+      print('Get cart count response status: ${response.statusCode}');
+      print('Get cart count response body: ${response.body}');
 
-          final List<dynamic> data;
-          try {
-            data = json.decode(cleanedResponse);
-          } catch (e) {
-            print('❌ Lỗi phân tích JSON sau khi làm sạch: $e');
-            return 0;
-          }
+      // Lưu cookie mới chỉ nếu không phải DathangMabaogia
+      if (response.headers.containsKey('set-cookie')) {
+        final cookie = Cookie.fromSetCookieValue(response.headers['set-cookie']!.split(';')[0]);
+        if (cookie.name != 'DathangMabaogia') {
+          await AuthService.cookieJar.saveFromResponse(uri, [cookie]);
+        }
+      }
 
-          if (data.isNotEmpty && data[0] is Map && data[0].containsKey('recordsTotal')) {
-            return data[0]['recordsTotal'] as int;
-          }
-          print('Dữ liệu tổng hợp không hợp lệ: $data');
-          return 0;
-        } else {
-          print('Không thể lấy số lượng sản phẩm: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        String cleanedResponse = response.body;
+        cleanedResponse = cleanedResponse.replaceAllMapped(
+          RegExp(r'(?<=tieude":\s*")[^"]*?(")(?=[^"]*?",)'),
+              (match) => match.group(0)!.replaceAll('"', '\\"'),
+        );
+
+        print('Cleaned JSON response: $cleanedResponse');
+
+        final List<dynamic> data;
+        try {
+          data = json.decode(cleanedResponse);
+        } catch (e) {
+          print('❌ Lỗi phân tích JSON: $e');
           return 0;
         }
-      } catch (e) {
-        print('Lỗi kết nối khi lấy số lượng: $e');
+
+        if (data.isNotEmpty && data[0] is Map && data[0].containsKey('recordsTotal')) {
+          return data[0]['recordsTotal'] as int;
+        }
+        print('Dữ liệu tổng hợp không hợp lệ: $data');
+        return 0;
+      } else {
+        print('Không thể lấy số lượng sản phẩm: ${response.statusCode}');
         return 0;
       }
-    } else {
-      String? cartCookie = prefs.getString('cartCookie') ?? '';
-      if (cartCookie.isEmpty) {
-        final cookies = await fetchCookies();
-        cartCookie = cookies['DathangMabaogia'];
-        if (cartCookie == null) {
-          print('❌ Không thể lấy cookie giỏ hàng');
-          return 0;
-        }
-        await prefs.setString('cartCookie', cartCookie);
-      }
-
-      final uri = Uri.parse('$baseUrl/ww1/giohanghientai.asp');
-      try {
-        final response = await http.get(
-          uri,
-          headers: {
-            'Accept': 'application/json',
-            'Cookie': 'DathangMabaogia=$cartCookie',
-          },
-        ).timeout(Duration(seconds: 5));
-
-        print('Get cart count URL (not logged in): $uri');
-        print('Cart cookie: $cartCookie');
-        print('Get cart count response status: ${response.statusCode}');
-        print('Get cart count response body: ${response.body}');
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data is Map && data.containsKey('items') && data['items'] is List) {
-            return data['items'].length;
-          }
-          print('Dữ liệu tổng hợp không hợp lệ: $data');
-          return 0;
-        } else {
-          print('Không thể lấy số lượng sản phẩm: ${response.statusCode}');
-          return 0;
-        }
-      } catch (e) {
-        print('Lỗi kết nối khi lấy số lượng: $e');
-        return 0;
-      }
+    } catch (e) {
+      print('Lỗi kết nối khi lấy số lượng: $e');
+      return 0;
     }
   }
 }

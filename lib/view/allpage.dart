@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/order_history_model.dart';
 import 'package:flutter_application_1/models/product_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/services/cart_service.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
+import 'package:flutter_application_1/services/cart_service.dart';
+import 'package:flutter_application_1/services/favourite_service.dart';
 import 'package:flutter_application_1/view/auth/login.dart';
 import 'package:flutter_application_1/view/auth/register.dart';
 import 'package:flutter_application_1/view/cart/cart_history.dart';
@@ -11,12 +12,14 @@ import 'package:flutter_application_1/view/cart/cart_page.dart';
 import 'package:flutter_application_1/view/components/bottom_appbar.dart';
 import 'package:flutter_application_1/view/components/search_appbar.dart';
 import 'package:flutter_application_1/view/detail/detail_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/view/drawer/category_drawer.dart';
 import 'package:flutter_application_1/view/drawer/filter_bottomsheet.dart';
 import 'package:flutter_application_1/view/favourite/favourite_page.dart';
 import 'package:flutter_application_1/view/home/homepage.dart';
+import 'package:flutter_application_1/view/profile/personal_info.dart';
 import 'package:flutter_application_1/view/profile/profile.dart';
+import 'package:flutter_application_1/view/profile/notification_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PageAll extends StatefulWidget {
   const PageAll({super.key});
@@ -30,14 +33,15 @@ class _PageAllState extends State<PageAll> {
   final ValueNotifier<int> categoryNotifier = ValueNotifier(35001);
   final ValueNotifier<int> filterNotifier = ValueNotifier(0);
 
-  final GlobalKey<favouritePageState> favouritePageKey =
-      GlobalKey<favouritePageState>();
+  final GlobalKey<favouritePageState> favouritePageKey = GlobalKey<favouritePageState>();
   final GlobalKey<PageCartState> cartPageKey = GlobalKey<PageCartState>();
-  final GlobalKey<CarthistoryPageState> carthistoryPageKey =
-      GlobalKey<CarthistoryPageState>();
+  final GlobalKey<CarthistoryPageState> carthistoryPageKey = GlobalKey<CarthistoryPageState>();
   final GlobalKey<HomePageState> homePageKey = GlobalKey<HomePageState>();
+  final GlobalKey<PersonalInfoPageState> personalInfoPageKey = GlobalKey<PersonalInfoPageState>();
+  final GlobalKey<NotificationPageState> notificationPageKey = GlobalKey<NotificationPageState>();
 
   final ValueNotifier<int> cartItemCountNotifier = ValueNotifier(0);
+  final ValueNotifier<int> wishlistItemCountNotifier = ValueNotifier(0);
   final List<dynamic> _productDetailStack = [];
   final TextEditingController _searchController = TextEditingController();
 
@@ -51,6 +55,8 @@ class _PageAllState extends State<PageAll> {
   late final favouritePage _favouritePage;
   late final Register _registerPage;
   late final ProfilePage _profilePage;
+  late final PersonalInfoPage _personalInfoPage;
+  late final NotificationPage _notificationPage;
 
   DetailPage? _detailPage;
   CarthistoryPage? _carthistoryPage;
@@ -76,37 +82,30 @@ class _PageAllState extends State<PageAll> {
       },
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      print("Đang gọi hàm lấy số lượng giỏ hàng...");
-      if (Global.email.isEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        Global.email = prefs.getString('emailAddress') ?? '';
-        Global.name = prefs.getString('customerName') ?? '';
-      }
-
-      if (Global.email.isNotEmpty) {
-        int count = await APICartService.getCartItemCountFromApi(Global.email);
-        cartItemCountNotifier.value = count;
-      } else {
-        print("Không tìm thấy userId");
-      }
-    });
-
     _favouritePage = favouritePage(
       onProductTap: (product) {
         _goToDetail(product, 'favourite');
       },
       key: favouritePageKey,
+      onFavouriteToggle: () {
+        _loadCounts();
+      },
     );
+
     _registerPage = Register();
     _profilePage = ProfilePage(
       onTapCartHistory: _goToCartHistory,
+      onTapPersonalInfo: _goToPersonalInfo,
+      onTapNotification: _goToNotification,
+      onTapFavourite: _goToFavourite,
+      onTapCart: _goToCart,
       onLogout: () async {
         await AuthService.handleLogout(context);
         setState(() {
           _currentPage = 'home';
           _currentIndex = 0;
           cartItemCountNotifier.value = 0;
+          wishlistItemCountNotifier.value = 0;
         });
       },
     );
@@ -117,8 +116,7 @@ class _PageAllState extends State<PageAll> {
           _currentPage = 'cart';
           _currentIndex = 2;
         });
-        cartPageKey.currentState
-            ?.chonNhieuVaMoBottomSheet(productIdsVuaThem ?? []);
+        cartPageKey.currentState?.chonNhieuVaMoBottomSheet(productIdsVuaThem ?? []);
       },
       cartitemCount: cartItemCountNotifier,
       onProductTap: (product) {
@@ -126,13 +124,74 @@ class _PageAllState extends State<PageAll> {
       },
       key: carthistoryPageKey,
     );
+
+    _personalInfoPage = PersonalInfoPage(
+      key: personalInfoPageKey,
+    );
+
+    _notificationPage = NotificationPage(
+      key: notificationPageKey,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      print("Đang gọi hàm lấy số lượng giỏ hàng và yêu thích...");
+      await _loadCounts();
+    });
+  }
+
+  Future<void> _loadCounts() async {
+    if (Global.email.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      Global.email = prefs.getString('emailAddress') ?? '';
+      Global.name = prefs.getString('customerName') ?? '';
+      Global.pass = prefs.getString('passWord') ?? '';
+    }
+
+    final cartCount = await APICartService.getCartItemCountFromApi(Global.email);
+    final wishlistCount = await APIFavouriteService.getWishlistItemCountFromApi(Global.email);
+    cartItemCountNotifier.value = cartCount;
+    wishlistItemCountNotifier.value = wishlistCount;
   }
 
   void _goToCartHistory() {
     setState(() {
       _currentPage = 'carthistory';
+      // Keep _currentIndex at profile tab (3) for bottom navigation
+      // The page will be shown via _getPageIndex() which returns 6 for carthistory
       carthistoryPageKey.currentState?.loadOrderHistory();
     });
+  }
+
+  void _goToPersonalInfo() {
+    setState(() {
+      _currentPage = 'personalinfo';
+      // Don't change _currentIndex - keep it at profile tab (3) for bottom navigation
+      // The page will be shown via _getPageIndex() which returns 7 for personalinfo
+    });
+  }
+
+  void _goToNotification() {
+    setState(() {
+      _currentPage = 'notification';
+      // Don't change _currentIndex - keep it at profile tab (3) for bottom navigation
+      // The page will be shown via _getPageIndex() which returns 8 for notification
+    });
+  }
+
+  void _goToFavourite() {
+    setState(() {
+      _currentPage = 'favourite';
+      _currentIndex = 1; // Switch to favourite tab
+    });
+    favouritePageKey.currentState?.reloadFavourites();
+  }
+
+  void _goToCart() {
+    setState(() {
+      _currentPage = 'cart';
+      _currentIndex = 2; // Switch to cart tab
+    });
+    cartPageKey.currentState?.loadCartItems();
   }
 
   void _goHome({int? newCategoryId}) {
@@ -165,7 +224,6 @@ class _PageAllState extends State<PageAll> {
     } else if (product is Map<String, dynamic>) {
       newId = product['id']?.toString();
     } else if (product is OrderModel) {
-      // nếu truyền nhầm 1 order thì sẽ không có id sản phẩm
       if (product.items.isNotEmpty) {
         newId = product.items.first.id;
       }
@@ -174,11 +232,7 @@ class _PageAllState extends State<PageAll> {
     if (!isBack && fromPage != 'detail') {
       _previousPage = fromPage;
     }
-    if (!isBack &&
-        _currentPage == 'detail' &&
-        currentId != null &&
-        newId != null &&
-        currentId != newId) {
+    if (!isBack && _currentPage == 'detail' && currentId != null && newId != null && currentId != newId) {
       _productDetailStack.add(selectedProduct);
     }
 
@@ -197,14 +251,11 @@ class _PageAllState extends State<PageAll> {
                 _currentIndex = 2;
               });
               if (productIdVuaThem != null)
-                cartPageKey.currentState
-                    ?.chonNhieuVaMoBottomSheet([productIdVuaThem]);
+                cartPageKey.currentState?.chonNhieuVaMoBottomSheet([productIdVuaThem]);
             },
             modelType: product is CartItemModel
                 ? product.moduleType
-                : (product is Map<String, dynamic>
-                    ? product['moduleType'] ?? ''
-                    : ''),
+                : (product is Map<String, dynamic> ? product['moduleType'] ?? '' : ''),
             cartitemCount: cartItemCountNotifier,
             productId: productId,
             categoryNotifier: categoryNotifier,
@@ -217,7 +268,7 @@ class _PageAllState extends State<PageAll> {
                   _currentPage = _previousPage;
                   _detailPage = null;
                   selectedProduct = null;
-                  _previousPage = 'home'; 
+                  _previousPage = 'home';
                   _productDetailStack.clear();
                 });
               }
@@ -225,6 +276,7 @@ class _PageAllState extends State<PageAll> {
             onProductTap: (newProduct) {
               _goToDetail(newProduct, 'detail');
             },
+            wishlistItemCountNotifier: wishlistItemCountNotifier,
           );
         });
       });
@@ -247,21 +299,23 @@ class _PageAllState extends State<PageAll> {
         return 5;
       case 'carthistory':
         return 6;
+      case 'personalinfo':
+        return 7;
+      case 'notification':
+        return 8;
       default:
         return 0;
     }
   }
 
   void _onTabTapped(int index) {
-    if (index == 0 && _currentPage == 'home') {
-      homePageKey.currentState?.fetchProducts();
-      return;
-    }
     setState(() {
       _currentIndex = index;
       switch (index) {
         case 0:
           _currentPage = 'home';
+          categoryNotifier.value = 35001;
+          homePageKey.currentState?.fetchProducts();
           break;
         case 1:
           _currentPage = 'favourite';
@@ -273,10 +327,6 @@ class _PageAllState extends State<PageAll> {
           break;
         case 3:
           _currentPage = 'profile';
-          break;
-        case 4:
-          _currentPage = 'carthistory';
-          carthistoryPageKey.currentState?.loadOrderHistory();
           break;
       }
     });
@@ -303,8 +353,7 @@ class _PageAllState extends State<PageAll> {
             Padding(
               padding: EdgeInsets.only(
                 top: kToolbarHeight,
-                bottom: kBottomNavigationBarHeight +
-                    MediaQuery.of(context).padding.bottom,
+                bottom: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
               ),
               child: IndexedStack(
                 index: _getPageIndex(),
@@ -314,8 +363,10 @@ class _PageAllState extends State<PageAll> {
                   _cartPage,
                   _registerPage,
                   _profilePage,
-                  _detailPage ?? Container(), // tránh null & tránh render lại
+                  _detailPage ?? Container(),
                   _carthistoryPage ?? Container(),
+                  _personalInfoPage,
+                  _notificationPage,
                 ],
               ),
             ),
@@ -347,11 +398,17 @@ class _PageAllState extends State<PageAll> {
                   ),
                   child: ValueListenableBuilder<int>(
                     valueListenable: cartItemCountNotifier,
-                    builder: (context, value, child) {
-                      return CustomBottomNavBar(
-                        cartitemCount: Global.email.isNotEmpty ? value : 0,
-                        currentIndex: _currentIndex,
-                        onTap: _onTabTapped,
+                    builder: (context, cartCount, _) {
+                      return ValueListenableBuilder<int>(
+                        valueListenable: wishlistItemCountNotifier,
+                        builder: (context, wishlistCount, _) {
+                          return CustomBottomNavBar(
+                            cartitemCount: cartCount,
+                            wishlistItemCount: wishlistCount,
+                            currentIndex: _currentIndex,
+                            onTap: _onTabTapped,
+                          );
+                        },
                       );
                     },
                   ),

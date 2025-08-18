@@ -29,6 +29,7 @@ class DetailPage extends StatefulWidget {
   final String productId;
   final ValueNotifier<int> categoryNotifier;
   final ValueNotifier<int> cartitemCount;
+  final ValueNotifier<int> wishlistItemCountNotifier; // Thêm notifier
   final VoidCallback? onBack;
   final void Function(dynamic product)? onProductTap;
   final String? modelType;
@@ -39,6 +40,7 @@ class DetailPage extends StatefulWidget {
     required this.productId,
     required this.categoryNotifier,
     required this.cartitemCount,
+    required this.wishlistItemCountNotifier, // Thêm vào constructor
     this.onBack,
     this.onProductTap,
     this.modelType,
@@ -57,6 +59,7 @@ class DetailPageState extends State<DetailPage> {
   Map<String, dynamic>? productDetail;
   bool isLoading = true;
   bool isBackVisible = true;
+  bool isFavourite = false; // Thêm biến trạng thái yêu thích
   final ScrollController _scrollController = ScrollController();
   List<dynamic> comments = [];
   bool isLoadingComments = true;
@@ -98,11 +101,23 @@ class DetailPageState extends State<DetailPage> {
       if (detail['hienthibinhluan'] == 'True') {
         loadComments();
       }
+      // Kiểm tra trạng thái yêu thích
+      checkFavouriteStatus();
     } else {
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> checkFavouriteStatus() async {
+    final wishlist = await APIFavouriteService.fetchWishlistItems(
+      userId: Global.email,
+      password: Global.pass,
+    );
+    setState(() {
+      isFavourite = wishlist.any((item) => item['id'].toString() == widget.productId);
+    });
   }
 
   Future<void> loadComments({bool loadMore = false}) async {
@@ -164,8 +179,7 @@ class DetailPageState extends State<DetailPage> {
   void initState() {
     super.initState();
 
-    final categoryModule =
-    getModuleNameFromCategoryId(widget.categoryNotifier.value);
+    final categoryModule = getModuleNameFromCategoryId(widget.categoryNotifier.value);
 
     if ((widget.modelType ?? '').isEmpty) {
       moduleType = categoryModule;
@@ -173,17 +187,14 @@ class DetailPageState extends State<DetailPage> {
       moduleType = widget.modelType!;
     }
 
-    print(
-        'categoryWidget: ${widget.modelType} , categoryModule: $categoryModule ,moduleType: $moduleType');
+    print('categoryWidget: ${widget.modelType} , categoryModule: $categoryModule ,moduleType: $moduleType');
 
     getProducts();
 
     _scrollController.addListener(() {
-      if (_scrollController.position.userScrollDirection ==
-          ScrollDirection.reverse) {
+      if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
         if (isBackVisible) setState(() => isBackVisible = false);
-      } else if (_scrollController.position.userScrollDirection ==
-          ScrollDirection.forward) {
+      } else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
         if (!isBackVisible) setState(() => isBackVisible = true);
       }
     });
@@ -221,8 +232,7 @@ class DetailPageState extends State<DetailPage> {
     if (isLoading) {
       return Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-            backgroundColor: Colors.white, title: const Text("Đang tải...")),
+        appBar: AppBar(backgroundColor: Colors.white, title: const Text("Đang tải...")),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -231,8 +241,7 @@ class DetailPageState extends State<DetailPage> {
     final product = productDetail ?? {};
     final String title = product['tieude'] ?? 'Sản phẩm chưa có tên';
     final String price = product['gia'] ?? 'Chưa có giá';
-    final String description = (product['noidungchitiet'] ?? 'Không có mô tả')
-        .replaceAll("''", '"');
+    final String description = (product['noidungchitiet'] ?? 'Không có mô tả').replaceAll("''", '"');
     final bool showComments = product['hienthibinhluan'] == 'True';
     final bool allowComments = product['chophepbinhluan'] == 'True';
 
@@ -241,8 +250,7 @@ class DetailPageState extends State<DetailPage> {
       body: Stack(
         children: [
           Padding(
-            padding:
-            EdgeInsets.only(bottom: model == 'sanpham' ? 55 : 0, top: 0),
+            padding: EdgeInsets.only(bottom: model == 'sanpham' ? 55 : 0, top: 0),
             child: NotificationListener<ScrollNotification>(
               onNotification: (_) => true,
               child: SingleChildScrollView(
@@ -275,8 +283,7 @@ class DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 8),
                           Text(
                             '$title',
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -306,8 +313,7 @@ class DetailPageState extends State<DetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: Text(
                                 'Bình luận',
                                 style: TextStyle(
@@ -371,8 +377,7 @@ class DetailPageState extends State<DetailPage> {
                             if (allowComments) ...[
                               const SizedBox(height: 16),
                               Padding(
-                                padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -408,8 +413,7 @@ class DetailPageState extends State<DetailPage> {
                                       decoration: InputDecoration(
                                         hintText: 'Viết bình luận của bạn...',
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                         filled: true,
                                         fillColor: Colors.white,
@@ -431,8 +435,7 @@ class DetailPageState extends State<DetailPage> {
                                           backgroundColor: Colors.blue,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                            BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -460,12 +463,9 @@ class DetailPageState extends State<DetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                               child: Text(
-                                model == 'tintuc'
-                                    ? 'Tin tức liên quan'
-                                    : 'Sản phẩm liên quan',
+                                model == 'tintuc' ? 'Tin tức liên quan' : 'Sản phẩm liên quan',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -557,19 +557,28 @@ class DetailPageState extends State<DetailPage> {
                         color: Colors.black.withOpacity(0.5),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.favorite_border,
-                            color: Colors.white),
+                        icon: Icon(
+                          isFavourite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavourite ? Colors.red : Colors.white,
+                        ),
                         onPressed: () async {
-                          await APIFavouriteService.toggleFavourite(
+                          final result = await APIFavouriteService.toggleFavourite(
                             moduleType: moduleType,
                             context: context,
                             userId: Global.email,
-                            productId: int.tryParse(widget.productId) ?? 0,
                             tieude: product['tieude'],
                             gia: product['gia'] ?? '',
                             hinhdaidien: '${product['hinhdaidien']}',
-                            password: Global.pass
+                            password: Global.pass,
+                            id: int.tryParse(widget.productId) ?? 0,
+                            idbg: '',
+                            wishlistItemCountNotifier: widget.wishlistItemCountNotifier, // Truyền notifier
                           );
+                          if (result is bool) {
+                            setState(() {
+                              isFavourite = result; // Cập nhật trạng thái yêu thích
+                            });
+                          }
                         },
                       ),
                     ),
@@ -582,13 +591,10 @@ class DetailPageState extends State<DetailPage> {
                         color: Colors.black.withOpacity(0.5),
                       ),
                       child: IconButton(
-                        icon:
-                        Image.asset('asset/share.png', color: Colors.white),
+                        icon: Image.asset('asset/share.png', color: Colors.white),
                         onPressed: () async {
-                          final productLink =
-                              '${APIService.baseUrl}/${product['url']}';
-                          final message =
-                              'Check out this awesome product: $productLink';
+                          final productLink = '${APIService.baseUrl}/${product['url']}';
+                          final message = 'Check out this awesome product: $productLink';
                           await Share.share(message);
                         },
                       ),

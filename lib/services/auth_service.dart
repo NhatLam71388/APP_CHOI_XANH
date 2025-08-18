@@ -26,7 +26,7 @@ class AuthService {
 
   static Future<Map<String, String?>> fetchCookies() async {
     try {
-      final url = Uri.parse('https://demochung.125.atoz.vn/ww1/cookie.mabaogia.asp');
+      final url = Uri.parse('${APIService.baseUrl}/ww1/cookie.mabaogia.asp');
       final cookies = await cookieJar.loadForRequest(url);
       final headers = {
         'Accept': 'application/json',
@@ -89,7 +89,7 @@ class AuthService {
 
       print('Login response status: ${response.statusCode}');
       print('Login response body: ${response.body}');
-      print('Login response headers: ${response.headers}');
+      //print('Login response headers: ${response.headers}');
 
       if (response.headers.containsKey('set-cookie')) {
         await cookieJar.saveFromResponse(url, [
@@ -139,6 +139,11 @@ class AuthService {
       await prefs.setString('maKH', userData['MaKH']);
       await prefs.setString('emailAddress', username);
       await prefs.setString('passWord', password);
+
+      // Cập nhật Global variables
+      Global.email = username;
+      Global.pass = password;
+      Global.name = userData['CustomerName'] ?? '';
 
       final cookies = await fetchCookies();
       if (cookies['DathangMabaogia'] != null) {

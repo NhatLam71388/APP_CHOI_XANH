@@ -10,17 +10,20 @@ class DanhMucDrawer extends StatelessWidget {
 
   Future<List<dynamic>> fetchDanhMuc() async {
     // [THAY_DOI_1]: Sử dụng URL API mới
-    final response = await http.get(Uri.parse('https://demochung.125.atoz.vn/ww2/app.menu.dautrang.asp'));
+    final response = await http.get(Uri.parse('${APIService.baseUrl}/ww2/app.menu.dautrang.asp'));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       // [THAY_DOI_2]: API mới trả về trực tiếp danh sách, không cần json[0]['data']
-      // Chuyển đổi dữ liệu để tương thích với logic hiện tại
-      return json.map((item) => {
+      // Chuyển đổi và lọc dữ liệu để tương thích với logic hiện tại
+      return json
+          .where((item) => !['Test 3 cấp', 'Thành viên đăng nhập', 'Tìm kiếm'].contains(item['tieude']))
+          .map((item) => {
         'id': item['idpart'], // [THAY_DOI_3]: Sử dụng 'idpart' thay vì 'id'
         'tieude': item['tieude'],
         'children': item['menucap1'] ?? [], // [THAY_DOI_4]: Sử dụng 'menucap1' thay vì 'children'
-      }).toList();
+      })
+          .toList();
     } else {
       throw Exception('Không thể tải danh mục');
     }

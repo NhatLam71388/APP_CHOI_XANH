@@ -4,19 +4,20 @@ class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final int cartitemCount;
-  
+  final int wishlistItemCount;
 
-  const CustomBottomNavBar(
-      {super.key,
-      required this.currentIndex,
-      required this.onTap,
-      required this.cartitemCount});
+  const CustomBottomNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    required this.cartitemCount,
+    required this.wishlistItemCount,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      backgroundColor:
-          Colors.transparent, 
+      backgroundColor: Colors.transparent,
       elevation: 0,
       currentIndex: currentIndex,
       onTap: onTap,
@@ -33,16 +34,48 @@ class CustomBottomNavBar extends StatelessWidget {
           label: 'Trang chủ',
         ),
         BottomNavigationBarItem(
-          icon: ImageIcon(
-            currentIndex == 1 ? AssetImage('asset/favouritesl.png') : AssetImage('asset/favourite.png'),
-            size: 24,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              SizedBox(
+                width: 26,
+                height: 26,
+                child: ImageIcon(
+                  currentIndex == 1 ? AssetImage('asset/favouritesl.png') : AssetImage('asset/favourite.png'),
+                  size: 24,
+                ),
+              ),
+              if (wishlistItemCount > 0)
+                Positioned(
+                  right: -8,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$wishlistItemCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           label: 'Yêu thích',
         ),
         BottomNavigationBarItem(
           icon: Stack(
-            clipBehavior:
-                Clip.none, // Cho phép phần tử Positioned tràn ra ngoài
+            clipBehavior: Clip.none,
             children: [
               SizedBox(
                 width: 26,
@@ -54,7 +87,7 @@ class CustomBottomNavBar extends StatelessWidget {
               ),
               if (cartitemCount > 0)
                 Positioned(
-                  right: -8, // đẩy ra sát góc
+                  right: -8,
                   top: -6,
                   child: Container(
                     padding: const EdgeInsets.all(2),
@@ -82,7 +115,7 @@ class CustomBottomNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: ImageIcon(
-            currentIndex  == 3 ? AssetImage('asset/usersl.png') : AssetImage('asset/user.png'),
+            currentIndex == 3 ? AssetImage('asset/usersl.png') : AssetImage('asset/user.png'),
             size: 24,
           ),
           label: 'Tài khoản',

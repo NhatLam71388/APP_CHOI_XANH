@@ -80,16 +80,18 @@ class HomePageState extends State<HomePage> {
   Future<void> fetchDanhMucFromAPI() async {
     try {
       final response = await http.get(
-        Uri.parse('https://demochung.125.atoz.vn/ww2/app.menu.dautrang.asp'),
+        Uri.parse('${APIService.baseUrl}/ww2/app.menu.dautrang.asp'),
       );
-      // print('DanhMuc API response status: ${response.statusCode}');
-      // print('DanhMuc API response body: ${response.body}');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        // print('DanhMuc API decoded: $json');
-        final List<dynamic> rawList = json; // JSON mới là danh sách trực tiếp
+        // Lọc các danh mục không mong muốn
+        final List<dynamic> filteredList = json.where((item) => ![
+          'Test 3 cấp',
+          'Thành viên đăng nhập',
+          'Tìm kiếm'
+        ].contains(item['tieude'])).toList();
         final List<Map<String, dynamic>> data =
-        rawList.map((item) => Map<String, dynamic>.from(item)).toList();
+        filteredList.map((item) => Map<String, dynamic>.from(item)).toList();
 
         try {
           final result = await compute(processCategoryData, data);
@@ -124,13 +126,17 @@ class HomePageState extends State<HomePage> {
 
   Future<void> fetchProducts() async {
     if (!mounted) return;
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      products = []; // Xóa danh sách sản phẩm cũ
+    });
     try {
       List<dynamic> allProducts = [];
       String newCategoryName = '';
       String newIdCatalog = '';
 
       if (_categoryId == 35001) {
+        // Tải lại toàn bộ sản phẩm từ tất cả danh mục
         for (int id in dynamicCategoryIds) {
           final modules = categoryModules[id];
           if (modules == null) continue;
@@ -163,13 +169,13 @@ class HomePageState extends State<HomePage> {
 
           allProducts.addAll(enhanced);
 
-          // Update UI incrementally after each category is fetched
+          // Cập nhật UI sau mỗi lần tải danh mục
           if (mounted) {
             setState(() {
-              products = List.from(allProducts); // Update products incrementally
+              products = List.from(allProducts);
               categoryName = newCategoryName;
               IdCatalogInitial = newIdCatalog;
-              isLoading = false; // Keep isLoading false to avoid showing loading indicator
+              isLoading = false;
             });
           }
         }
@@ -233,17 +239,14 @@ class HomePageState extends State<HomePage> {
     for (var entry in data.entries) {
       final value = entry.value;
       if (value is Map && value['id'] == id) {
-        return entry.key; // Trả về tên danh mục hiện tại (cha hoặc chính nó)
+        return entry.key;
       }
       if (value is Map && value.containsKey('children')) {
-        // Kiểm tra danh mục con
         final childData = value['children'] as Map<String, dynamic>;
         for (var childEntry in childData.entries) {
           final childValue = childEntry.value;
           if (childValue is Map && childValue['id'] == id) {
-            return parentOnly
-                ? entry.key
-                : childEntry.key; // Trả về tên cha nếu parentOnly = true
+            return parentOnly ? entry.key : childEntry.key;
           }
         }
       }
@@ -290,7 +293,6 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Danh sách các categoryId cần hiển thị 1 cột với NewsCard
     const List<int> singleColumnCategories = [35139, 35142, 35149];
     final crossAxisCount = singleColumnCategories.contains(_categoryId) ? 1 : 2;
     final modules = categoryModules[_categoryId];
@@ -298,7 +300,6 @@ class HomePageState extends State<HomePage> {
     final labelWidth = 190.0;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Xác định nội dung body dựa trên các điều kiện
     Widget bodyContent;
 
     if (isLoading) {
@@ -558,7 +559,7 @@ class HomePageState extends State<HomePage> {
             ),
         ],
       )
-          : null, // hoặc để trống nếu không cần AppBar
+          : null,
       backgroundColor: Colors.grey[100],
       body: bodyContent,
     );
