@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
 import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/favourite_service.dart';
@@ -16,7 +16,7 @@ import 'package:flutter_application_1/view/detail/detail_pricetitle.dart';
 import 'package:flutter_application_1/view/detail/relatednews_card.dart';
 import 'package:flutter_application_1/view/detail/relatedproduct_card.dart';
 import 'package:flutter_application_1/view/detail/specs_data.dart';
-import 'package:flutter_application_1/view/home/homepage.dart';
+import 'package:flutter_application_1/view/home/homepage.dart' show Global;
 import 'package:flutter_application_1/view/profile/profile.dart';
 import 'package:flutter_application_1/view/until/technicalspec_detail.dart';
 import 'package:flutter_application_1/view/until/until.dart';
@@ -66,7 +66,11 @@ class DetailPageState extends State<DetailPage> {
   int currentPage = 1;
   int totalPages = 1;
   final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   double _userRating = 5.0; // Mặc định 5 sao
+  bool _isSubmittingComment = false;
   late String moduleType;
   List<dynamic> _productsRelated = [];
 
@@ -150,30 +154,7 @@ class DetailPageState extends State<DetailPage> {
     });
   }
 
-  Future<void> postComment() async {
-    if (_commentController.text.trim().isEmpty) {
-      showToast('Vui lòng nhập nội dung bình luận', backgroundColor: Colors.red);
-      return;
-    }
 
-    final success = await APIService.postComment(
-      productId: widget.productId,
-      userId: Global.email,
-      content: _commentController.text.trim(),
-      rating: (_userRating * 20).toString(),
-    );
-
-    if (success) {
-      showToast('Gửi bình luận thành công', backgroundColor: Colors.green);
-      _commentController.clear();
-      setState(() {
-        _userRating = 5.0;
-      });
-      await loadComments(); // Làm mới danh sách bình luận
-    } else {
-      showToast('Gửi bình luận thất bại', backgroundColor: Colors.red);
-    }
-  }
 
   @override
   void initState() {
@@ -224,7 +205,114 @@ class DetailPageState extends State<DetailPage> {
   void dispose() {
     _scrollController.dispose();
     _commentController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF81C784).withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF81C784).withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          labelStyle: const TextStyle(color: Color(0xFF4CAF50)),
+          hintStyle: TextStyle(color: Colors.grey[400]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleSubmitComment() async {
+    if (_commentController.text.trim().isEmpty) {
+      showToast('Vui lòng nhập nội dung bình luận', backgroundColor: Colors.red);
+      return;
+    }
+
+    setState(() {
+      _isSubmittingComment = true;
+    });
+
+    try {
+      // Tạo form data theo yêu cầu
+      final formData = {
+        'tenkh': _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : '',
+        'txtemail': _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : '',
+        'txtdienthoai': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : '',
+        'noidungtxt': _commentController.text.trim(),
+        'id2': '5', // Luôn bằng 5
+        'id3': '/dist/images/user.jpg', // Luôn có giá trị này
+        'l': '', // Để trống như yêu cầu
+        'id': widget.productId
+      };
+
+      final response = await http.post(
+        Uri.parse('https://demochung.125.atoz.vn/ww1/save.binhluan.asp'),
+        body: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        if (jsonResponse.isNotEmpty && jsonResponse[0] is Map) {
+          final result = jsonResponse[0] as Map<String, dynamic>;
+          
+          if (result['maloi'] == '1') {
+            // Thành công
+            showToast('Gửi bình luận thành công!', backgroundColor: Colors.green);
+            
+            // Reset form
+            setState(() {
+              _nameController.clear();
+              _emailController.clear();
+              _phoneController.clear();
+              _commentController.clear();
+            });
+            
+            // Làm mới danh sách bình luận
+            await loadComments();
+          } else {
+            // Thất bại
+            showToast('Gửi bình luận thất bại: ${result['ThongBao']}', backgroundColor: Colors.red);
+          }
+        }
+      } else {
+        showToast('Lỗi kết nối, vui lòng thử lại', backgroundColor: Colors.red);
+      }
+    } catch (e) {
+      print('❌ Lỗi khi gửi bình luận: $e');
+      showToast('Lỗi kết nối, vui lòng thử lại', backgroundColor: Colors.red);
+    } finally {
+      setState(() {
+        _isSubmittingComment = false;
+      });
+    }
   }
 
   @override
@@ -350,6 +438,19 @@ class DetailPageState extends State<DetailPage> {
                                     soluongthich: comment['soluongthich'] ?? '0',
                                     noidung: comment['noidungbinhluan'] ?? '',
                                     hinhdaidien: comment['hinhdaidien'] ?? '',
+                                    replies: comment['replies'] ?? [], // Thêm trường replies
+                                    productId: widget.productId, // Thêm productId
+                                    commentId: comment['id'] ?? '', // Thêm commentId
+                                    onLikeUpdated: (String newLikeCount) {
+                                      // Cập nhật số lượng thích trong danh sách comments
+                                      setState(() {
+                                        comment['soluongthich'] = newLikeCount;
+                                      });
+                                    },
+                                    onReplySubmitted: () {
+                                      // Làm mới danh sách bình luận sau khi gửi reply thành công
+                                      loadComments();
+                                    },
                                   );
                                 },
                               ),
@@ -376,73 +477,140 @@ class DetailPageState extends State<DetailPage> {
                               ),
                             if (allowComments) ...[
                               const SizedBox(height: 16),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Color(0xFFE8F5E8), Color(0xFFF1F8E9)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Color(0xFF81C784).withOpacity(0.3)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xFF4CAF50).withOpacity(0.1),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Đánh giá của bạn',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    RatingBar.builder(
-                                      initialRating: _userRating,
-                                      minRating: 1,
-                                      direction: Axis.horizontal,
-                                      allowHalfRating: true,
-                                      itemCount: 5,
-                                      itemSize: 30.0,
-                                      itemBuilder: (context, _) => const Icon(
-                                        Icons.star,
-                                        color: Colors.amber,
-                                      ),
-                                      onRatingUpdate: (rating) {
-                                        setState(() {
-                                          _userRating = rating;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-                                    TextField(
-                                      controller: _commentController,
-                                      decoration: InputDecoration(
-                                        hintText: 'Viết bình luận của bạn...',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      maxLines: 3,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: ElevatedButton.icon(
-                                        onPressed: postComment,
-                                        icon: const Icon(Icons.send, size: 18),
-                                        label: const Text('Gửi bình luận'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF4CAF50),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
+                                          child: const Icon(
+                                            Icons.comment,
+                                            size: 18,
+                                            color: Colors.white,
                                           ),
                                         ),
-                                      ),
+                                        const SizedBox(width: 12),
+                                        const Text(
+                                          'Bình luận của bạn',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
+                                    // Form fields với thiết kế đẹp
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildFormField(
+                                            controller: _nameController,
+                                            label: 'Tên',
+                                            hint: 'Nhập tên của bạn',
+                                            icon: Icons.person,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildFormField(
+                                            controller: _emailController,
+                                            label: 'Email',
+                                            hint: 'Nhập email của bạn',
+                                            icon: Icons.email,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildFormField(
+                                      controller: _phoneController,
+                                      label: 'Số điện thoại',
+                                      hint: 'Nhập số điện thoại của bạn',
+                                      icon: Icons.phone,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildFormField(
+                                      controller: _commentController,
+                                      label: 'Nội dung bình luận',
+                                      hint: 'Viết bình luận của bạn...',
+                                      icon: Icons.comment,
+                                      maxLines: 3,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                                            ),
+                                            borderRadius: BorderRadius.circular(20),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Color(0xFF4CAF50).withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ElevatedButton.icon(
+                                            onPressed: _isSubmittingComment ? null : _handleSubmitComment,
+                                            icon: _isSubmittingComment
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                    ),
+                                                  )
+                                                : const Icon(Icons.send, size: 18),
+                                            label: Text(
+                                              _isSubmittingComment ? 'Đang gửi...' : 'Gửi bình luận',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.transparent,
+                                              shadowColor: Colors.transparent,
+                                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

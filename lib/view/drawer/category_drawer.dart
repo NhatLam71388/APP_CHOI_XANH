@@ -86,35 +86,194 @@ class DanhMucDrawer extends StatelessWidget {
                         final children = item['children'] ?? [];
 
                         if (children.isEmpty) {
-                          return ListTile(
-                            title: Text(title ?? ''),
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF198754).withOpacity(0.1),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF198754).withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
                             onTap: () {
                               onCategorySelected(
                                   int.tryParse(id.toString()) ?? 0);
                               Navigator.of(context).pop();
                             },
+                                borderRadius: BorderRadius.circular(12),
+                                splashColor: const Color(0xFF198754).withOpacity(0.1),
+                                highlightColor: const Color(0xFF198754).withOpacity(0.05),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF198754).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.category_outlined,
+                                          size: 20,
+                                          color: const Color(0xFF198754),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          title ?? '',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1a1a1a),
+                                          ),
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 16,
+                                        color: const Color(0xFF198754).withOpacity(0.6),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           );
                         } else {
-                          return ExpansionTile(
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF198754).withOpacity(0.1),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF198754).withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                              iconColor: const Color(0xFF198754),
+                              collapsedIconColor: const Color(0xFF198754),
                             title: InkWell(
                               onTap: () {
                                 onCategorySelected(
                                     int.tryParse(id.toString()) ?? 0);
                                 Navigator.of(context).pop();
                               },
-                              child: Text(title ?? ''),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF198754).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.folder_outlined,
+                                        size: 20,
+                                        color: const Color(0xFF198754),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Text(
+                                        title ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1a1a1a),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ),
                             children: children.map<Widget>((subItem) {
-                              return ListTile(
-                                title: Text(subItem['tieude'] ?? ''),
+                                return Container(
+                                  margin: const EdgeInsets.only(left: 32, top: 4, bottom: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF198754).withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF198754).withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
                                 onTap: () {
-                                  final id = subItem['idpart']; // [THAY_DOI_5]: Sử dụng 'idpart' cho subItem
+                                        final id = subItem['idpart'];
                                   onCategorySelected(
                                       int.tryParse(id.toString()) ?? 0);
                                   Navigator.of(context).pop();
                                 },
+                                      borderRadius: BorderRadius.circular(8),
+                                      splashColor: const Color(0xFF198754).withOpacity(0.1),
+                                      highlightColor: const Color(0xFF198754).withOpacity(0.05),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF198754).withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Icon(
+                                                Icons.subdirectory_arrow_right,
+                                                size: 16,
+                                                color: const Color(0xFF198754),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                subItem['tieude'] ?? '',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color(0xFF1a1a1a),
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 14,
+                                              color: const Color(0xFF198754).withOpacity(0.5),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                               );
                             }).toList(),
+                            ),
                           );
                         }
                       }),

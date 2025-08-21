@@ -15,17 +15,18 @@ class BottomActionBar extends StatelessWidget {
   final String moduleType;
   final void Function(int?) gotoCart;
 
-  const BottomActionBar(
-      {super.key,
-      required this.productId,
-      required this.userId,
-      required this.passwordHash,
-      required this.tieude,
-      required this.gia,
-      required this.hinhdaidien,
-      required this.cartitemCount,
-      required this.moduleType,
-      required this.gotoCart});
+  const BottomActionBar({
+    super.key,
+    required this.productId,
+    required this.userId,
+    required this.passwordHash,
+    required this.tieude,
+    required this.gia,
+    required this.hinhdaidien,
+    required this.cartitemCount,
+    required this.moduleType,
+    required this.gotoCart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,108 +35,153 @@ class BottomActionBar extends StatelessWidget {
       right: 0,
       bottom: 0,
       child: Container(
-        height: 55,
-        decoration: const BoxDecoration(
+        height: 100,
+        decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, -1),
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+              spreadRadius: 0,
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Color(0xff0066FF), // Màu viền dưới
-                      width: 12, // Độ dày viền
-                    ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                // Thêm vào giỏ hàng button (chỉ icon)
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: const Color(0xff0066FF).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    print('emailaddress: ${Global.email}');
-                    final result = await APICartService.addToCart(
-                      moduleType: moduleType,
-                      emailAddress: Global.email,
-                      password: passwordHash,
-                      productId: productId,
-                      cartitemCount: cartitemCount,
-                      quantity: 1
-                    );
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      print('emailaddress: ${Global.email}');
+                      final result = await APICartService.addToCart(
+                        moduleType: moduleType,
+                        emailAddress: Global.email,
+                        password: passwordHash,
+                        productId: productId,
+                        cartitemCount: cartitemCount,
+                        quantity: 1,
+                      );
 
-                    if (result == null) {
-                      showToast('Thêm vào giỏ hàng thành công!');
-                    } else {
-                      showToast(result as String, backgroundColor: Colors.red);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xff0066FF),
-                    padding: EdgeInsets.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.shopping_cart,
-                          size: 20, color: Color(0xff0066FF)),
-                      SizedBox(height: 2),
-                      Text(
-                        'Thêm vào giỏ hàng',
-                        style:
-                            TextStyle(fontSize: 12, color: Color(0xff0066FF)),
+                      if (result == null) {
+                        showToast('Thêm vào giỏ hàng thành công!');
+                      } else {
+                        showToast(result as String, backgroundColor: Colors.red);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: const Color(0xff0066FF),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(45),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await APICartService.addToCart(
-                      moduleType: moduleType,
-                      emailAddress: userId,
-                      password: Global.pass,
-                      productId: productId as int,
-                      cartitemCount: cartitemCount,
-                      quantity: 1
-                    );
-                    gotoCart(productId);
-                   
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff0066FF),
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
                     ),
-                    elevation: 0,
-                  ),
-                  child: const Center(
-                    child: Text('Mua ngay',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: const Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 32,
+                      color: Color(0xff0066FF),
+                    ),
                   ),
                 ),
-              ),
+                
+                const SizedBox(width: 16),
+                
+                // Mua ngay button
+                Expanded(
+                  child: Container(
+                    height: 90,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xff0066FF),
+                          Color(0xff0052CC),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xff0066FF).withOpacity(0.4),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await APICartService.addToCart(
+                          moduleType: moduleType,
+                          emailAddress: userId,
+                          password: Global.pass,
+                          productId: productId as int,
+                          cartitemCount: cartitemCount,
+                          quantity: 1,
+                        );
+                        gotoCart(productId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.flash_on,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Mua ngay',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

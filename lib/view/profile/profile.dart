@@ -130,86 +130,224 @@ class _ProfilePageState extends State<ProfilePage> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              Card(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.zero),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xff0066FF).withOpacity(0.05),
+                      const Color(0xff0066FF).withOpacity(0.02),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xff0066FF).withOpacity(0.1),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xff0066FF).withOpacity(0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
-                elevation: 0,
-                color: Colors.white,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      Image.asset(
-                        'asset/avatar.png',
-                        width: 70,
-                        height: 70,
-                        color: Colors.black26,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: isLogin
-                            ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Xin chào, ${Global.email}',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Text(
-                              'Bạn đã đăng nhập',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        )
-                            : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Vui lòng đăng nhập để mua hàng',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                buttonProfile(
-                                  title: 'Đăng nhập',
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const Login(),
-                                      ),
-                                    ).then((_) {
-                                      loadLoginStatus();
-                                    });
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                buttonProfile(
-                                  backgroundColor: Colors.black12,
-                                  title: 'Đăng ký',
-                                  textColor: Colors.black,
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const Register(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+                      // Avatar với nền gradient và shadow
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xff0066FF).withOpacity(0.1),
+                              const Color(0xff0066FF).withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xff0066FF).withOpacity(0.2),
+                              blurRadius: 15,
+                              offset: const Offset(0, 6),
+                              spreadRadius: 0,
                             ),
                           ],
                         ),
+                        padding: const EdgeInsets.all(12),
+                        child: Image.asset(
+                          'asset/avatar.png',
+                          width: 60,
+                          height: 60,
+                          color: const Color(0xff0066FF),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: isLogin
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Xin chào, ${Global.email}',
+                                    style: const TextStyle(
+                                      color: Color(0xff1a1a1a),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xff0066FF).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: const Color(0xff0066FF).withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          size: 16,
+                                          color: const Color(0xff0066FF),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Bạn đã đăng nhập',
+                                          style: TextStyle(
+                                            color: const Color(0xff0066FF),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Vui lòng đăng nhập để mua hàng',
+                                    style: TextStyle(
+                                      color: Color(0xff1a1a1a),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                Color(0xff0066FF),
+                                                Color(0xff0052CC),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(20),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xff0066FF).withOpacity(0.3),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
+                                                spreadRadius: 0,
+                                              ),
+                                            ],
+                                          ),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => const Login(),
+                                                ),
+                                              ).then((_) {
+                                                loadLoginStatus();
+                                              });
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.transparent,
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              padding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Đăng nhập',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Container(
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(
+                                              color: const Color(0xff0066FF).withOpacity(0.3),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => const Register(),
+                                                ),
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.transparent,
+                                              foregroundColor: const Color(0xff0066FF),
+                                              elevation: 0,
+                                              padding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Đăng ký',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                       ),
                     ],
                   ),

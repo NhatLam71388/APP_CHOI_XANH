@@ -185,17 +185,38 @@ class APIService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonResponse = json.decode(response.body);
+        
+        // Xử lý cấu trúc JSON mới: [{"recordsTotal": 22, "recordsFiltered": 5, "data": [...]}]
         if (jsonResponse.isNotEmpty && jsonResponse[0] is Map) {
-          return jsonResponse[0] as Map<String, dynamic>;
+          final firstItem = jsonResponse[0] as Map<String, dynamic>;
+          
+          // Kiểm tra cấu trúc dữ liệu
+          if (firstItem.containsKey('recordsTotal') && 
+              firstItem.containsKey('recordsFiltered') && 
+              firstItem.containsKey('data')) {
+            
+            // Đảm bảo data là một List
+            if (firstItem['data'] is List) {
+              print('✅ Dữ liệu bình luận hợp lệ: ${firstItem['recordsTotal']} tổng, ${firstItem['recordsFiltered']} hiển thị');
+              return firstItem;
+            } else {
+              print('❌ Cấu trúc data không hợp lệ: ${firstItem['data']}');
+              return {'recordsTotal': 0, 'recordsFiltered': 0, 'data': []};
+            }
+          } else {
+            print('❌ Cấu trúc JSON không đúng định dạng mong đợi');
+            return {'recordsTotal': 0, 'recordsFiltered': 0, 'data': []};
+          }
         }
-        print('Dữ liệu bình luận không hợp lệ');
+        
+        print('❌ Dữ liệu bình luận không hợp lệ hoặc rỗng');
         return {'recordsTotal': 0, 'recordsFiltered': 0, 'data': []};
       } else {
-        print('Lỗi khi lấy bình luận: ${response.statusCode}');
+        print('❌ Lỗi khi lấy bình luận: ${response.statusCode}');
         return {'recordsTotal': 0, 'recordsFiltered': 0, 'data': []};
       }
     } catch (e) {
-      print('Lỗi kết nối khi lấy bình luận: $e');
+      print('❌ Lỗi kết nối khi lấy bình luận: $e');
       return {'recordsTotal': 0, 'recordsFiltered': 0, 'data': []};
     }
   }
