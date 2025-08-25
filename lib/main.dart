@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
-import 'package:flutter_application_1/view/allpage.dart';
+import 'package:flutter_application_1/screens/layout/layout.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       locale: const Locale('vi', 'VN'),
-      home: const PageAll(),
+      home: const AllPageView(),
     );
   }
 }

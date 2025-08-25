@@ -5,7 +5,6 @@ import 'package:flutter_application_1/view/auth/login.dart';
 import 'package:flutter_application_1/view/until/until.dart';
 import 'package:flutter_application_1/widgets/button_widget.dart';
 import 'package:flutter_application_1/widgets/input_widget.dart';
-import 'package:flutter_application_1/widgets/label_widget.dart';
 import 'package:flutter_application_1/widgets/widget_auth.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:http/http.dart' as http;
@@ -143,7 +142,6 @@ class _RegisterState extends State<Register> {
                         child: appLogo,
                       ),
                     ),
-                    FormLabel('Họ và tên'),
                     const SizedBox(height: 6),
                     CustomTextField(
                       focusNode: _fullnameFocus,
@@ -154,7 +152,6 @@ class _RegisterState extends State<Register> {
                       maxline: 1,
                     ),
                     const SizedBox(height: 10),
-                    FormLabel('Email'),
                     const SizedBox(height: 6),
                     CustomTextField(
                       focusNode: _emailFocus,
@@ -165,7 +162,6 @@ class _RegisterState extends State<Register> {
                       maxline: 1,
                     ),
                     const SizedBox(height: 10),
-                    FormLabel('Mật khẩu'),
                     const SizedBox(height: 6),
                     CustomTextField(
                       focusNode: _passwordFocus,

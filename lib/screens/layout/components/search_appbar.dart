@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/view/search/search_page.dart';
 
 class SearchAppBar extends StatelessWidget implements PreferredSizeWidget {
   final void Function(String)? onSearch;

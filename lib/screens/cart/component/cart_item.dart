@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/product_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
-import 'package:flutter_application_1/view/home/homepage.dart';
 import 'package:flutter_application_1/view/until/until.dart';
+
+import '../../../Controller/home.dart';
 
 class ItemCart extends StatefulWidget {
   final bool isSelected;

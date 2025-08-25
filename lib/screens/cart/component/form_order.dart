@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
-import 'package:flutter_application_1/view/allpage.dart';
 import 'package:flutter_application_1/widgets/button_widget.dart';
 import 'package:flutter_application_1/widgets/input_widget.dart';
 

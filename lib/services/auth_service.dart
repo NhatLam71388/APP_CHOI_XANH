@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/view/allpage.dart';
+import 'package:flutter_application_1/screens/layout/layout.dart';
 import 'package:flutter_application_1/view/until/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
@@ -10,8 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../view/home/homepage.dart';
+import '../Controller/home.dart';
 
 class AuthService {
   static late CookieJar cookieJar;
@@ -157,7 +156,7 @@ class AuthService {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => PageAll()),
+        MaterialPageRoute(builder: (context) => AllPageView()),
             (route) => false,
       );
     } else {
@@ -192,7 +191,7 @@ class AuthService {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => PageAll()),
+      MaterialPageRoute(builder: (context) => AllPageView()),
           (route) => false,
     );
   }
@@ -274,7 +273,7 @@ class AuthService {
 
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => PageAll()),
+          MaterialPageRoute(builder: (context) => AllPageView()),
               (route) => false,
         );
       } else {

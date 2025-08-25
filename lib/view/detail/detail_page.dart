@@ -6,24 +6,22 @@ import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/favourite_service.dart';
 import 'package:flutter_application_1/view/auth/register.dart';
-import 'package:flutter_application_1/view/cart/cart_page.dart';
-import 'package:flutter_application_1/view/components/bottom_appbar.dart';
+import 'package:flutter_application_1/screens/layout/components/bottom_appbar.dart';
 import 'package:flutter_application_1/view/detail/comment_card.dart';
 import 'package:flutter_application_1/view/detail/bottom_bar.dart';
 import 'package:flutter_application_1/view/detail/detail_description.dart';
 import 'package:flutter_application_1/view/detail/detail_imggallery.dart';
-import 'package:flutter_application_1/view/detail/detail_pricetitle.dart';
 import 'package:flutter_application_1/view/detail/relatednews_card.dart';
 import 'package:flutter_application_1/view/detail/relatedproduct_card.dart';
 import 'package:flutter_application_1/view/detail/specs_data.dart';
-import 'package:flutter_application_1/view/home/homepage.dart' show Global;
-import 'package:flutter_application_1/view/profile/profile.dart';
 import 'package:flutter_application_1/view/until/technicalspec_detail.dart';
 import 'package:flutter_application_1/view/until/until.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html/parser.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../../Controller/home.dart';
 
 class DetailPage extends StatefulWidget {
   final String productId;

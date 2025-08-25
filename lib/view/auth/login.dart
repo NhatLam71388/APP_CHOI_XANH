@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/view/allpage.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/view/auth/register.dart';
 import 'package:flutter_application_1/widgets/button_widget.dart';
 import 'package:flutter_application_1/widgets/input_widget.dart';
-import 'package:flutter_application_1/widgets/label_widget.dart';
 import 'package:flutter_application_1/widgets/widget_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -86,7 +84,6 @@ class _LoginState extends State<Login> {
                       child: appLogo,
                     ),
                   ),
-                  FormLabel('Số điện thoại/Email'),
                   const SizedBox(height: 6),
                   CustomTextField(
                     focusNode: _accFocus,
@@ -97,7 +94,6 @@ class _LoginState extends State<Login> {
                     maxline: 1,
                   ),
                   const SizedBox(height: 10),
-                  FormLabel('Mật khẩu'),
                   const SizedBox(height: 6),
                   CustomTextField(
                     focusNode: _passFocus,
