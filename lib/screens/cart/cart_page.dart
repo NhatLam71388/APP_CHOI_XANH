@@ -1,0 +1,231 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/models/product_model.dart';
+import 'package:flutter_application_1/services/api_service.dart';
+import 'package:flutter_application_1/services/cart_service.dart';
+import 'package:flutter_application_1/screens/cart/component/order_widget.dart';
+import 'package:flutter_application_1/screens/cart/component/cart_item.dart';
+import 'package:flutter_application_1/screens/cart/component/form_order.dart';
+import 'package:flutter_application_1/view/until/cart_ulti.dart';
+import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/cart_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application_1/Controller/cart.dart';
+import 'package:provider/provider.dart';
+
+import '../../Controller/home.dart';
+
+class PageCart extends StatefulWidget {
+  final Function(CartItemModel product) onProductTap;
+  final ValueNotifier<int> cartitemCount;
+  const PageCart(
+      {super.key, required this.onProductTap, required this.cartitemCount});
+
+  @override
+  State<PageCart> createState() => PageCartState();
+}
+
+class PageCartState extends State<PageCart> {
+  late CartController cartController;
+
+  @override
+  void initState() {
+    super.initState();
+    cartController = CartController();
+    cartController.init(widget.cartitemCount);
+  }
+
+  @override
+  void dispose() {
+    cartController.dispose();
+    super.dispose();
+  }
+
+  // Method để tương thích với allpage.dart
+  Future<void> chonNhieuVaMoBottomSheet(List<int> productIdsVuaThem) async {
+    await cartController.chonNhieuVaMoBottomSheet(productIdsVuaThem, widget.cartitemCount);
+  }
+
+  // Method để tương thích với layout_controller.dart
+  Future<void> loadCartItems() async {
+    await cartController.loadCartItems(widget.cartitemCount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: cartController,
+      child: Consumer<CartController>(
+        builder: (context, controller, child) {
+          if (controller.isLoading) {
+            return const Scaffold(
+              body: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xff0066FF),
+                  )),
+            );
+          }
+
+          return Scaffold(
+              backgroundColor: Colors.grey[100],
+              body: RefreshIndicator(
+                color: Color(0xff0066FF),
+                onRefresh: () => controller.loadCartItems(widget.cartitemCount),
+                child: SafeArea(
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          if (controller.cartItems.isNotEmpty)
+                            CheckboxListTile(
+                              title: const Text('Chọn tất cả'),
+                              value: controller.isSelectAll,
+                              onChanged: controller.toggleSelectAll,
+                              activeColor: const Color(0xff0066FF),
+                            ),
+                          Expanded(
+                            child: controller.cartItems.isEmpty
+                                ? const Center(child: Text("Giỏ hàng trống"))
+                                : ListView.builder(
+                                    padding: const EdgeInsets.only(bottom: 70),
+                                    itemCount: controller.cartItems.length + 1,
+                                    itemBuilder: (context, index) {
+                                      if (index == controller.cartItems.length) {
+                                        return Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 8),
+                                          padding: const EdgeInsets.all(16),
+                                          color: Colors.white,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              if (controller.hasSelectedItems) ...[
+                                                buildInfoRow(
+                                                    "Tiền đơn hàng",
+                                                    formatCurrency(calculateTotalPrice(controller.cartItems).toStringAsFixed(0)) + "₫"),
+                                                const SizedBox(height: 8),
+                                                buildInfoRow("Phí vận chuyển", '${formatCurrency(controller.phiVanChuyen)}₫'),
+                                                const Divider(height: 20, color: Colors.black12),
+                                                buildInfoRow("Tổng thanh toán", '${formatCurrency(controller.tongThanhToan)}₫', isTotal: true),
+                                              ]
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        final item = controller.cartItems[index];
+                                        return ItemCart(
+                                          cartitemCount: widget.cartitemCount,
+                                          userId: Global.email,
+                                          item: item,
+                                          isSelected: item.isSelect,
+                                          onTap: () {
+                                            widget.onProductTap(item);
+                                          },
+                                          onSelectedChanged: (value) {
+                                            controller.updateItemSelection(item, value);
+                                          },
+                                          onIncrease: () async {
+                                            await controller.increaseQuantity(item, widget.cartitemCount);
+                                          },
+                                          onDecrease: () async {
+                                            await controller.decreaseQuantity(item, widget.cartitemCount);
+                                          },
+                                          OnChanged: () async {
+                                            await controller.loadCartItems(widget.cartitemCount);
+                                          },
+                                        );
+                                      }
+                                    }),
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: CartBottomBar(
+                          isOrderEnabled: controller.hasSelectedItems,
+                          tongThanhToan: controller.tongThanhToan,
+                          onOrderPressed: () async {
+                            showModalBottomSheet(
+                              isScrollControlled: true,
+                              context: context,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                              ),
+                              builder: (BuildContext context) {
+                                return OrderConfirmationSheet(
+                                  parentContext: context,
+                                  addressController: controller.addressController,
+                                  fullnameController: controller.fullnameController,
+                                  phoneController: controller.phoneController,
+                                  emailController: controller.emailController,
+                                  tongThanhToan: controller.tongThanhToan,
+                                  onConfirm: () async {
+                                    await showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (dialogContext) {
+                                        Future.delayed(Duration.zero, () async {
+                                          try {
+                                            await handleDatHang(
+                                              moduletype: controller.cartItems
+                                                  .firstWhere((item) => item.isSelect)
+                                                  .moduleType,
+                                              totalPrice: controller.tongThanhToan,
+                                              address: controller.addressController.text,
+                                              cartitemCount: widget.cartitemCount,
+                                              context: context,
+                                              userId: Global.email,
+                                              customerName: controller.fullnameController.text,
+                                              email: controller.emailController.text,
+                                              tel: controller.phoneController.text,
+                                              cartItems: controller.cartItems,
+                                              onCartReload: () => controller.loadCartItems(widget.cartitemCount),
+                                            );
+                                          } catch (e) {
+                                            showToast('Lỗi khi đặt hàng: $e', backgroundColor: Colors.red);
+                                          }
+                                          if (mounted) {
+                                            Navigator.of(dialogContext, rootNavigator: true).pop();
+                                          }
+                                        });
+
+                                        return const Dialog(
+                                          backgroundColor: Colors.black87,
+                                          insetPadding: EdgeInsets.all(80),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                                          ),
+                                          child: Padding(
+                                            padding: EdgeInsets.all(20),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                CircularProgressIndicator(color: Color(0xff0066FF)),
+                                                SizedBox(height: 16),
+                                                Text(
+                                                  "Đang xử lý đơn hàng...",
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ));
+        },
+      ),
+    );
+  }
+}
