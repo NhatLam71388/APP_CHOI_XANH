@@ -1,7 +1,7 @@
 // lib/widgets/related_product_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 
 class RelatedProductCard extends StatelessWidget {
   final Map<String, dynamic> product;

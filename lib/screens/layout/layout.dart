@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/screens/layout/components/bottom_appbar.dart';
 import 'package:flutter_application_1/screens/layout/components/search_appbar.dart';
-import 'package:flutter_application_1/view/drawer/category_drawer.dart';
+import 'package:flutter_application_1/screens/layout/components/category_drawer.dart';
 import '../../Controller/layout_controller.dart';
 
 class AllPageView extends StatefulWidget {

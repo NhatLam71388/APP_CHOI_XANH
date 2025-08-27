@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/product_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
-import 'package:flutter_application_1/view/until/cart_ulti.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/screens/cart/component/cart_ulti.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
 
@@ -92,20 +92,9 @@ class CartController extends ChangeNotifier {
     int productId = int.tryParse(item.id.toString()) ?? 0;
     if (productId == 0) return false;
 
-    final success = await APICartService.updateCartItemQuantity(
-      emailAddress: Global.email,
-      productId: productId,
-      newQuantity: newQuantity,
-    );
-
-    if (success) {
       item.quantity = newQuantity;
       notifyListeners();
       return true;
-    } else {
-      showToast('Cập nhật số lượng thất bại', backgroundColor: Colors.red);
-      return false;
-    }
   }
 
   Future<void> increaseQuantity(CartItemModel item, ValueNotifier<int> cartitemCount) async {

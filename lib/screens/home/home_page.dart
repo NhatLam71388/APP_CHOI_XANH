@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/Constant/app_colors.dart';
 import 'package:flutter_application_1/Controller/home.dart';
 import 'package:flutter_application_1/screens/home/components/news_card.dart';
 import 'package:flutter_application_1/screens/home/components/product_card.dart';
-import 'package:flutter_application_1/view/drawer/filter_bottomsheet.dart';
-import 'package:flutter_application_1/view/until/technicalspec_item.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/screens/home/components/filter_bottomsheet.dart';
+import 'package:flutter_application_1/screens/home/components/technicalspec_item.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/category_model.dart';
+import '../../widgets/loading_widget.dart';
 import '../contact/contact.dart';
 
 class HomePage extends StatefulWidget {
@@ -77,11 +79,7 @@ class HomePageState extends State<HomePage> {
           Widget bodyContent;
 
           if (controller.isLoading) {
-            bodyContent = const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xff0066FF),
-              ),
-            );
+            bodyContent = LoadingWidget();
           } else if (controller.categoryId == 35028) {
             bodyContent = ContactForm();
           } else if (controller.products.isEmpty) {
@@ -277,7 +275,7 @@ class HomePageState extends State<HomePage> {
           return Scaffold(
             appBar: (controller.categoryId != 0 && controller.categoryId != 35001)
                 ? AppBar(
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.backgroundColor,
                     titleSpacing: 8,
                     title: CustomPaint(
                       painter: CategoryLabelPainter(labelWidth: labelWidth),
@@ -330,7 +328,7 @@ class HomePageState extends State<HomePage> {
                     ],
                   )
                 : null,
-            backgroundColor: Colors.grey[100],
+            backgroundColor: AppColors.backgroundColor,
             body: bodyContent,
           );
         },

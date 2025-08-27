@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/product_model.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/custom_snackbar.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
@@ -10,6 +11,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 
 class APICartService {
   static Future<String?> addToCart({
+    required BuildContext context,
     required String moduleType,
     required String? emailAddress,
     required String? password,
@@ -46,7 +48,7 @@ class APICartService {
 
         await prefs.setString('local_cart_items', json.encode(cartItems));
         cartitemCount.value = cartItems.length;
-        showToast('Đã thêm vào giỏ hàng (chưa đăng nhập)', backgroundColor: Colors.green);
+        CustomSnackBar.showSuccess(context, message: 'Đã thêm vào giỏ hàng');
         return null;
       }
 
@@ -116,7 +118,6 @@ class APICartService {
           final responseData = jsonResponse[0];
           final thongbao = responseData['ThongBao']?.toString() ?? '';
           final maloi = responseData['maloi']?.toString() ?? '0';
-          final cleanMessage = thongbao.replaceAll(RegExp(r'<[^>]+>'), '').trim();
 
           if (maloi == '1' && thongbao.contains('Đưa công việc vào danh sách chờ nộp đơn')) {
             final cartItems = await fetchCartItemsById(
@@ -125,11 +126,10 @@ class APICartService {
               password: password,
             );
             cartitemCount.value = cartItems.length;
-            showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã thêm vào giỏ hàng', backgroundColor: Colors.green);
+            CustomSnackBar.showSuccess(context, message: 'Đã thêm vào giỏ hàng');
             return null;
           } else {
-            showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại', backgroundColor: Colors.red);
-            return cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại';
+            showToast('Thao tác thất bại', backgroundColor: Colors.red);
           }
         } else {
           showToast('Dữ liệu phản hồi không hợp lệ', backgroundColor: Colors.red);
@@ -169,28 +169,54 @@ class APICartService {
         final moduleType = item['moduleType'] ?? 'sanpham';
 
         String? image = imageCache[id];
-        if (image == null || image.isEmpty) {
+        String productName = 'Sản phẩm $id'; // Default name
+        double productPrice = 0.0; // Default price
+        
+        // Fetch product details to get real name and price
+        try {
           final productDetail = await APIService.fetchProductDetail(
             APIService.baseUrl,
             moduleType,
             id,
-                (_) => [],
+            (_) => [],
           );
-          image = productDetail != null && productDetail['hinhdaidien'] != null
-              ? '${APIService.baseUrl}${productDetail['hinhdaidien']}'
-              : 'https://via.placeholder.com/150';
-
-          imageCache[id] = image;
-          await prefs.setString('cart_images', json.encode(imageCache));
+          
+          if (productDetail != null) {
+            // Get real product name
+            if (productDetail['tieude'] != null) {
+              productName = productDetail['tieude'].toString();
+            }
+            
+            // Get real product price
+            if (productDetail['gia'] != null) {
+              productPrice = double.tryParse(productDetail['gia'].toString()) ?? 0.0;
+            }
+            
+            // Get product image
+            if (productDetail['hinhdaidien'] != null) {
+              image = '${APIService.baseUrl}${productDetail['hinhdaidien']}';
+            }
+          }
+        } catch (e) {
+          print('❌ Lỗi khi lấy thông tin sản phẩm $id: $e');
+          // Keep default values if API call fails
         }
 
-        print('🛒 SP (Local): $id | SL: $quantity | Image: $image');
+        if (image == null || image.isEmpty) {
+          image = 'https://via.placeholder.com/150';
+        }
+
+        // Cache the image
+        imageCache[id] = image;
+        await prefs.setString('cart_images', json.encode(imageCache));
+
+        print('🛒 SP (Local): $productName | ID: $id | SL: $quantity | Price: $productPrice | Image: $image');
 
         items.add(CartItemModel(
           id: id,
           idbg: '',
-          name: 'Sản phẩm $id', // Placeholder name, can be fetched if needed
-          price: 0.0, // Placeholder price, can be fetched if needed
+          name: productName, // Use real product name instead of placeholder
+          price: productPrice, // Use real product price instead of placeholder
           moduleType: moduleType,
           image: image,
           quantity: quantity,
@@ -332,6 +358,7 @@ class APICartService {
   }
 
   static Future<bool> removeCartItem({
+    required BuildContext context,
     required String emailAddress,
     required String productId,
     required ValueNotifier<int> cartitemCount,
@@ -346,7 +373,7 @@ class APICartService {
       cartItems.removeWhere((item) => item['productId'].toString() == productId);
       await prefs.setString('local_cart_items', json.encode(cartItems));
       cartitemCount.value = cartItems.length;
-      showToast('Đã xóa sản phẩm khỏi giỏ hàng (chưa đăng nhập)', backgroundColor: Colors.green);
+      CustomSnackBar.showSuccess(context, message: 'Đã xóa sản phẩm khỏi giỏ hàng');
       return true;
     }
 
@@ -426,7 +453,7 @@ class APICartService {
             if (maloi == '1' || thongbao.contains('xóa khỏi danh mục cart')) {
               cartitemCount.value = (cartitemCount.value > 0) ? cartitemCount.value - 1 : 0;
               print('Xóa sản phẩm thành công: $productId');
-              showToast('Đã xóa sản phẩm khỏi giỏ hàng', backgroundColor: Colors.green);
+              CustomSnackBar.showSuccess(context, message: 'Đã xóa sản phẩm khỏi giỏ hàng');
               return true;
             } else {
               print('API trả về thông báo không mong đợi: $thongbao');
@@ -455,100 +482,7 @@ class APICartService {
     }
   }
 
-  static Future<bool> syncLocalCartToServer({
-    required String emailAddress,
-    required String password,
-    required ValueNotifier<int> cartitemCount,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
-    final List<dynamic> localCartItems = json.decode(cartItemsJson);
-
-    if (localCartItems.isEmpty) {
-      return true; // No items to sync
-    }
-
-    bool allSuccess = true;
-    for (var item in localCartItems) {
-      final result = await addToCart(
-        moduleType: item['moduleType'] ?? 'sanpham',
-        emailAddress: emailAddress,
-        password: password,
-        productId: item['productId'],
-        cartitemCount: cartitemCount,
-        quantity: item['quantity'] ?? 1,
-      );
-      if (result != null) {
-        allSuccess = false; // If any item fails to sync, mark as false
-      }
-    }
-
-    if (allSuccess) {
-      // Clear local cart after successful sync
-      await prefs.setString('local_cart_items', '[]');
-      showToast('Đã đồng bộ giỏ hàng lên server', backgroundColor: Colors.green);
-    } else {
-      showToast('Có lỗi khi đồng bộ một số sản phẩm', backgroundColor: Colors.red);
-    }
-
-    return allSuccess;
-  }
-
-  static Future<bool> updateCartItemQuantity({
-    required String emailAddress,
-    required int productId,
-    required int newQuantity,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = await AuthService.isLoggedIn();
-
-    if (!isLoggedIn) {
-      // Handle unauthenticated user
-      final cartItemsJson = prefs.getString('local_cart_items') ?? '[]';
-      List<dynamic> cartItems = json.decode(cartItemsJson);
-      final existingItemIndex = cartItems.indexWhere((item) => item['productId'] == productId);
-
-      if (existingItemIndex != -1) {
-        cartItems[existingItemIndex]['quantity'] = newQuantity;
-        await prefs.setString('local_cart_items', json.encode(cartItems));
-        showToast('Đã cập nhật số lượng (chưa đăng nhập)', backgroundColor: Colors.green);
-        return true;
-      } else {
-        showToast('Không tìm thấy sản phẩm trong giỏ hàng', backgroundColor: Colors.red);
-        return false;
-      }
-    }
-
-    final uri = Uri.parse('${APIService.baseUrl}/api/update.quantity.php');
-
-    try {
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'ProductID': productId,
-          'EmailAddress': emailAddress,
-          'Quantity': newQuantity,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        if (jsonResponse['success'] == true) {
-          return true;
-        } else {
-          print('API trả về lỗi: ${jsonResponse['message']}');
-          return false;
-        }
-      } else {
-        print('Lỗi HTTP: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      print('Lỗi kết nối khi cập nhật số lượng: $e');
-      return false;
-    }
-  }
+  
 
   static Future<void> datHang({
     required String moduletype,

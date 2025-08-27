@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/custom_snackbar.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,7 @@ class APIFavouriteService {
   static Future<bool>? get isAlreadyFavourite => null;
 
   static Future<Object?> toggleFavourite({
-    required BuildContext? context,
+    required BuildContext context,
     required String? userId,
     required int id,
     required String idbg,
@@ -90,7 +91,7 @@ class APIFavouriteService {
         if (isAlreadyFavourite) {
           wishlistItems.removeWhere((item) => item['id'].toString() == id.toString());
           await prefs.setString('local_wishlist_items', json.encode(wishlistItems));
-          showToast('Đã xóa $tieude khỏi yêu thích (chưa đăng nhập)', backgroundColor: Colors.green);
+          CustomSnackBar.showSuccess(context!, message: 'Đã xóa khỏi danh sách yêu thích');
           print('Wishlist after removal: $wishlistItems');
           // Cập nhật số lượng yêu thích
           if (wishlistItemCountNotifier != null) {
@@ -107,7 +108,7 @@ class APIFavouriteService {
             'moduleType': moduleType,
           });
           await prefs.setString('local_wishlist_items', json.encode(wishlistItems));
-          showToast('Đã thêm $tieude vào yêu thích (chưa đăng nhập)', backgroundColor: Colors.green);
+          CustomSnackBar.showSuccess(context, message: 'Đã thêm vào danh sách yêu thích');
           print('Wishlist after addition: $wishlistItems');
           // Cập nhật số lượng yêu thích
           if (wishlistItemCountNotifier != null) {
@@ -164,11 +165,10 @@ class APIFavouriteService {
           final responseData = jsonResponse[0];
           final thongbao = responseData['ThongBao']?.toString() ?? '';
           final maloi = responseData['maloi']?.toString() ?? '0';
-          final cleanMessage = thongbao.replaceAll(RegExp(r'<[^>]+>'), '').trim();
 
           if (maloi == '1') {
             if (isAlreadyFavourite && thongbao.contains('xóa khỏi danh mục wishlist')) {
-              showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã xóa $tieude khỏi yêu thích', backgroundColor: Colors.green);
+              CustomSnackBar.showSuccess(context!, message: 'Đã xóa khỏi danh sách yêu thích');
               // Cập nhật số lượng yêu thích
               if (wishlistItemCountNotifier != null && userId != null) {
                 final count = await getWishlistItemCountFromApi(userId);
@@ -176,7 +176,7 @@ class APIFavouriteService {
               }
               return false;
             } else if (!isAlreadyFavourite && thongbao.contains('Đưa vào wishlist')) {
-              showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Đã thêm $tieude vào yêu thích', backgroundColor: Colors.green);
+              CustomSnackBar.showSuccess(context!, message: 'Đã thêm vào danh sách yêu thích');
               // Cập nhật số lượng yêu thích
               if (wishlistItemCountNotifier != null && userId != null) {
                 final count = await getWishlistItemCountFromApi(userId);
@@ -185,7 +185,7 @@ class APIFavouriteService {
               return true;
             }
           }
-          showToast(cleanMessage.isNotEmpty ? cleanMessage : 'Thao tác thất bại', backgroundColor: Colors.red);
+          showToast('Thao tác thất bại', backgroundColor: Colors.red);
           return isAlreadyFavourite;
         } else {
           showToast('Dữ liệu phản hồi không hợp lệ', backgroundColor: Colors.red);
@@ -200,53 +200,6 @@ class APIFavouriteService {
       showToast('Lỗi xử lý dữ liệu từ máy chủ', backgroundColor: Colors.red);
       return isAlreadyFavourite;
     }
-  }
-
-  static Future<bool> syncLocalWishlistToServer({
-    required String userId,
-    required String password,
-    ValueNotifier<int>? wishlistItemCountNotifier, // Thêm tham số để cập nhật số lượng
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final wishlistItemsJson = prefs.getString('local_wishlist_items') ?? '[]';
-    final List<dynamic> localWishlistItems = json.decode(wishlistItemsJson);
-
-    if (localWishlistItems.isEmpty) {
-      return true;
-    }
-
-    bool allSuccess = true;
-    for (var item in localWishlistItems) {
-      final result = await toggleFavourite(
-        context: null,
-        userId: userId,
-        id: item['id'],
-        idbg: item['idbg'],
-        tieude: item['tieude'],
-        gia: item['gia'],
-        hinhdaidien: item['hinhdaidien'],
-        moduleType: item['moduleType'],
-        password: password,
-        wishlistItemCountNotifier: wishlistItemCountNotifier, // Truyền notifier vào
-      );
-      if (result == false) {
-        allSuccess = false;
-      }
-    }
-
-    if (allSuccess) {
-      await prefs.setString('local_wishlist_items', '[]');
-      showToast('Đã đồng bộ danh sách yêu thích lên server', backgroundColor: Colors.green);
-      // Cập nhật số lượng yêu thích sau khi đồng bộ
-      if (wishlistItemCountNotifier != null) {
-        final count = await getWishlistItemCountFromApi(userId);
-        wishlistItemCountNotifier.value = count;
-      }
-    } else {
-      showToast('Có lỗi khi đồng bộ một số sản phẩm yêu thích', backgroundColor: Colors.red);
-    }
-
-    return allSuccess;
   }
 
   static Future<List<Map<String, dynamic>>> fetchWishlistItems({

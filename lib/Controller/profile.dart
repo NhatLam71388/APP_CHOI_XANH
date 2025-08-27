@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
-import '../view/until/until.dart';
+import '../widgets/until.dart';
 
 class ProfileLogic {
   bool isLogin = false;
@@ -41,7 +41,6 @@ class ProfileLogic {
         if (data.isNotEmpty && data[0]['ThongBao'] == 'Login fail') {
           print('API returned login failure: ${data[0]}');
           settingsItems = [];
-          showToast('Đăng nhập thất bại', backgroundColor: Colors.red);
         } else {
           settingsItems = data;
         }
@@ -80,6 +79,5 @@ class ProfileLogic {
 
   Future<void> handleLogout(BuildContext context) async {
     await AuthService.handleLogout(context);
-    showToast('Đã đăng xuất', backgroundColor: Colors.green);
   }
 }

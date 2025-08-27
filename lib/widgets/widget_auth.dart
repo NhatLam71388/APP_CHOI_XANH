@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/view/auth/register.dart';
 
 Widget textLoginWith() {
   return Padding(

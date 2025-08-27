@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/order_history_model.dart';
-import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
 import 'package:flutter_application_1/services/favourite_service.dart';
-import 'package:flutter_application_1/view/auth/register.dart';
-import 'package:flutter_application_1/view/cart/cart_history.dart';
+import 'package:flutter_application_1/screens/cart/cart_history.dart';
 import 'package:flutter_application_1/screens/profile/notification_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product_model.dart';
+import '../screens/detail/detail_page.dart';
 import '../screens/favourite/favourite_page.dart';
 import '../screens/profile/personal_info.dart';
-import '../view/detail/detail_page.dart';
-import 'cart.dart';
+import '../screens/register/register_view.dart';
 import 'home.dart';
 import '../screens/cart/cart_page.dart';
 import '../screens/home/home_page.dart';

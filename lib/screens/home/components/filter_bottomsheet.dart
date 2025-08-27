@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../Controller/home.dart';
+import '../../../Controller/home.dart';
 
 class BoLocBottomSheet extends StatefulWidget {
   final void Function(String) onFilterSelected;

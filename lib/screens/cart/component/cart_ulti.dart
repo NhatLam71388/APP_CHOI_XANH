@@ -3,9 +3,9 @@ import 'package:flutter_application_1/models/product_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
 import 'package:flutter_application_1/services/carthistory_service.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 
-import '../../Controller/home.dart';
+import '../../../Controller/home.dart';
 
 double calculateTotalPrice(List<CartItemModel> cartItems) {
   double total = 0;
@@ -62,6 +62,7 @@ Future<void> handleDatHang({
     // Xóa từng item khỏi giỏ
     for (var item in selectedItems) {
       await APICartService.removeCartItem(
+        context: context,
         cartitemCount: cartitemCount,
         emailAddress: userId,
         productId: item.id.toString(),

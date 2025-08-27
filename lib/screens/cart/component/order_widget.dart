@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/custom_snackbar.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:animate_do/animate_do.dart'; // Thư viện animation
 
 class CartBottomBar extends StatelessWidget {
@@ -140,10 +141,7 @@ class CartBottomBar extends StatelessWidget {
                       if (isOrderEnabled) {
                         onOrderPressed();
                       } else {
-                        showToast(
-                          'Vui lòng chọn ít nhất 1 sản phẩm',
-                          backgroundColor: Colors.red,
-                        );
+                        CustomSnackBar.showWarning(context, message: 'Vui lòng chọn ít nhất 1 sản phẩm');
                       }
                     },
                     style: ElevatedButton.styleFrom(

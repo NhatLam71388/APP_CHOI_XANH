@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/screens/layout/layout.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/custom_snackbar.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -160,7 +161,7 @@ class AuthService {
             (route) => false,
       );
     } else {
-      showToast('Đăng nhập thất bại', backgroundColor: Colors.red);
+      CustomSnackBar.showError(context, message: 'Đăng nhập không thành công');
     }
   }
 

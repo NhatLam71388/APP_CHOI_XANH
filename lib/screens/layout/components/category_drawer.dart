@@ -4,6 +4,8 @@ import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/widgets/widget_auth.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../widgets/loading_widget.dart';
+
 class DanhMucDrawer extends StatelessWidget {
   final void Function(int) onCategorySelected;
   DanhMucDrawer({required this.onCategorySelected});
@@ -68,7 +70,7 @@ class DanhMucDrawer extends StatelessWidget {
                 future: fetchDanhMuc(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    return LoadingWidget();
                   }
 
                   if (snapshot.hasError) {

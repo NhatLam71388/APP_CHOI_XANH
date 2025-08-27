@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/Constant/app_colors.dart';
 import 'package:flutter_application_1/Controller/favourite.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/loading_widget.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_application_1/widgets/empty_state_widget.dart';
 
 class FavouritePage extends StatefulWidget {
   final Function(dynamic) onProductTap;
@@ -41,45 +44,13 @@ class favouritePageState extends State<FavouritePage> {
     await favouriteController.reloadFavourites();
   }
 
-  Future<void> _toggleFavourite(Map<String, dynamic> item, int index) async {
-    final success = await favouriteController.toggleFavourite(
+  Future<void> _toggleFavourite(Map<String, dynamic> item, int index, BuildContext context) async {
+    await favouriteController.toggleFavourite(
         item,
         index,
         context,
         widget.onFavouriteToggle
     );
-
-    if (success) {
-      // Hiển thị toast thông báo
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                Icons.favorite,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Đã xóa khỏi danh sách yêu thích',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF198754),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   Widget _buildItem(Map<String, dynamic> item, Animation<double>? animation) {
@@ -280,7 +251,7 @@ class favouritePageState extends State<FavouritePage> {
                               ),
                             ),
                             child: ElevatedButton(
-                              onPressed: () => _toggleFavourite(item, favouriteController.wishlistItems.indexOf(item)),
+                              onPressed: () => _toggleFavourite(item, favouriteController.wishlistItems.indexOf(item), context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.red,
@@ -317,94 +288,25 @@ class favouritePageState extends State<FavouritePage> {
       child: Consumer<FavouriteController>(
         builder: (context, controller, child) {
           return Scaffold(
-            backgroundColor: const Color(0xFFF8FFF8), // Background xanh lá nhạt
+            backgroundColor: AppColors.backgroundColor, // Background xanh lá nhạt
             body: RefreshIndicator(
               color: const Color(0xFF198754), // Màu xanh lá
               onRefresh: controller.reloadFavourites,
               child: SafeArea(
                 child: controller.isLoading
-                    ? _buildLoadingState()
+                    ? LoadingWidget()
                     : controller.isEmpty
-                    ? _buildEmptyState()
+                    ? const EmptyStateWidget(
+                        title: 'Danh sách yêu thích trống',
+                        subtitle: 'Hãy thêm sản phẩm vào danh sách yêu thích\nđể xem chúng ở đây',
+                        icon: Icons.favorite_border,
+                        color: Color(0xFF198754),
+                      )
                     : _buildFavouritesList(controller),
               ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF198754).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const CircularProgressIndicator(
-              color: Color(0xFF198754),
-              strokeWidth: 3,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Đang tải danh sách yêu thích...',
-            style: TextStyle(
-              fontSize: 16,
-              color: const Color(0xFF198754).withOpacity(0.8),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: FadeInUp(
-        duration: const Duration(milliseconds: 800),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: const Color(0xFF198754).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Icon(
-                Icons.favorite_border,
-                size: 80,
-                color: const Color(0xFF198754).withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Danh sách yêu thích trống',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF198754),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Hãy thêm sản phẩm vào danh sách yêu thích\nđể xem chúng ở đây',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: const Color(0xFF198754).withOpacity(0.7),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

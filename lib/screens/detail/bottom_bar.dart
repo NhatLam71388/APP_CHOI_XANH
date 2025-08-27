@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 
 import '../../Controller/home.dart';
 
@@ -60,8 +60,8 @@ class BottomActionBar extends StatelessWidget {
               children: [
                 // Thêm vào giỏ hàng button (chỉ icon)
                 Container(
-                  width: 90,
-                  height: 90,
+                  width: 80,
+                  height: 60,
                   decoration: BoxDecoration(
                     color: const Color(0xff0066FF).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -70,6 +70,7 @@ class BottomActionBar extends StatelessWidget {
                     onPressed: () async {
                       print('emailaddress: ${Global.email}');
                       final result = await APICartService.addToCart(
+                        context: context,
                         moduleType: moduleType,
                         emailAddress: Global.email,
                         password: passwordHash,
@@ -77,12 +78,6 @@ class BottomActionBar extends StatelessWidget {
                         cartitemCount: cartitemCount,
                         quantity: 1,
                       );
-
-                      if (result == null) {
-                        showToast('Thêm vào giỏ hàng thành công!');
-                      } else {
-                        showToast(result as String, backgroundColor: Colors.red);
-                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
@@ -108,7 +103,7 @@ class BottomActionBar extends StatelessWidget {
                 // Mua ngay button
                 Expanded(
                   child: Container(
-                    height: 90,
+                    height: 60,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       gradient: const LinearGradient(
@@ -131,6 +126,7 @@ class BottomActionBar extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         await APICartService.addToCart(
+                          context: context,
                           moduleType: moduleType,
                           emailAddress: userId,
                           password: Global.pass,

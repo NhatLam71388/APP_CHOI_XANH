@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/notification_model.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/empty_state_widget.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -283,72 +284,10 @@ class NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(60),
-            ),
-            child: Icon(
-              Icons.notifications_none,
-              size: 60,
-              color: Colors.grey[400],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Không có thông báo',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Bạn sẽ nhận được thông báo khi có cập nhật mới',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          'Thông báo',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        actions: [
-          if (notificationData != null && notificationData!.data.isNotEmpty)
-            IconButton(
-              onPressed: () => _loadNotifications(isRefresh: true),
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Làm mới',
-            ),
-        ],
-      ),
       body: RefreshIndicator(
         color: const Color(0xff0066FF),
         onRefresh: () => _loadNotifications(isRefresh: true),
@@ -399,7 +338,7 @@ class NotificationPageState extends State<NotificationPage> {
                     ),
                   )
                 : notificationData == null || notificationData!.data.isEmpty
-                    ? _buildEmptyState()
+                    ? EmptyStateWidget(title: 'Không có thông báo', subtitle: 'Bạn sẽ nhận được thông báo\nkhi có cập nhật mới', icon: Icons.notifications_none)
                     : NotificationListener<ScrollNotification>(
                         onNotification: (ScrollNotification scrollInfo) {
                           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {

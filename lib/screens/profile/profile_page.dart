@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/view/auth/login.dart';
-import 'package:flutter_application_1/view/auth/register.dart';
+import 'package:flutter_application_1/screens/login/login_view.dart';
 import 'package:flutter_application_1/widgets/card_widget.dart';
 
+import '../../Constant/app_colors.dart';
 import '../../Controller/profile.dart';
+import '../register/register_view.dart';
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback onTapCartHistory;
@@ -41,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.backgroundColor,
       body: RefreshIndicator(
         color: const Color(0xff0066FF),
         onRefresh: () async {
@@ -200,7 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => const Login(),
+                                            builder: (context) => const LoginView(),
                                           ),
                                         ).then((_) {
                                           _logic.loadLoginStatus().then((_) {

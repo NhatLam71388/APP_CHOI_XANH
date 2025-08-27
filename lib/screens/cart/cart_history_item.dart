@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/product_model.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:intl/intl.dart';
 
 class HistoryCard extends StatefulWidget {

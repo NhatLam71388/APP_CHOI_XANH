@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/api_service.dart';
-import 'package:flutter_application_1/view/detail/img_expand.dart';
+
+import 'img_expand.dart';
 
 class DetailImageGallery extends StatefulWidget {
   final String productId; // [THAY_DOI_1]: Nhận productId thay vì images

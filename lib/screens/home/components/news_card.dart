@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/view/detail/detail_page.dart';
-import 'package:flutter_application_1/view/until/technicalspec_item.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/screens/home/components/technicalspec_item.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 
 class NewsCard extends StatelessWidget {
   final dynamic product;

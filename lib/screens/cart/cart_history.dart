@@ -5,11 +5,11 @@ import 'package:flutter_application_1/models/product_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
 import 'package:flutter_application_1/services/cart_service.dart';
 import 'package:flutter_application_1/services/carthistory_service.dart';
-import 'package:flutter_application_1/view/cart/cart_history_item.dart';
-import 'package:flutter_application_1/view/until/until.dart';
+import 'package:flutter_application_1/widgets/until.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Controller/home.dart';
+import 'cart_history_item.dart';
 
 class CarthistoryPage extends StatefulWidget {
   final Function(dynamic product) onProductTap;
@@ -206,6 +206,7 @@ class CarthistoryPageState extends State<CarthistoryPage>
                             break;
                           }
                           final error = await APICartService.addToCart(
+                            context: context,
                             moduleType: 'sanpham',
                             emailAddress: Global.email,
                             password: Global.pass,
