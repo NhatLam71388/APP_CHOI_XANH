@@ -61,9 +61,6 @@ class _LoginViewContent extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nút quay lại
-                        _buildBackButton(context, controller),
-                        
                         // Logo app
                         _buildAppLogo(),
                         
@@ -135,36 +132,6 @@ class _LoginViewContent extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  // Widget nút quay lại
-  Widget _buildBackButton(BuildContext context, LoginController controller) {
-    return GestureDetector(
-      onTap: () => controller.goBack(context),
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(right: 30, left: 30),
-        decoration: BoxDecoration(
-          color: const Color(0xff0066FF),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.keyboard_backspace_outlined, size: 24, color: Colors.white),
-            SizedBox(width: 5),
-            Text(
-              'Quay lại trang trước',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

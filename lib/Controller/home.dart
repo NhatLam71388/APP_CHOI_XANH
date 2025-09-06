@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/api_service.dart';
+import 'package:flutter_application_1/services/home_cache_service.dart';
 import 'package:flutter_application_1/widgets/until.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,6 +42,16 @@ class HomeController extends ChangeNotifier {
 
   Future<void> fetchDanhMucFromAPI() async {
     try {
+      // Kiểm tra cache trước
+      final cachedCategoryData = await HomeCacheService.getCachedCategoryData();
+      if (cachedCategoryData != null) {
+        print('🚀 Sử dụng cache cho dữ liệu danh mục');
+        dynamicCategoryIds = List<int>.from(cachedCategoryData['dynamicCategoryIds']);
+        danhMucData = Map<String, dynamic>.from(cachedCategoryData['categoryData']);
+        return;
+      }
+
+      print('🌐 Tải dữ liệu danh mục từ API');
       final response = await http.get(
         Uri.parse('${APIService.baseUrl}/ww2/app.menu.dautrang.asp'),
       );
@@ -59,6 +70,10 @@ class HomeController extends ChangeNotifier {
           final result = await compute(processCategoryData, data);
           dynamicCategoryIds = List<int>.from(result['ids']);
           danhMucData = Map<String, dynamic>.from(result['danhMucData']);
+          
+          // Cache dữ liệu danh mục
+          await HomeCacheService.cacheCategoryData(danhMucData, dynamicCategoryIds);
+          
           print('Dynamic Category IDs: $dynamicCategoryIds');
           print('DanhMuc Data: $danhMucData');
         } catch (e, stack) {
@@ -73,12 +88,35 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchProducts({bool forceRefresh = false}) async {
     isLoading = true;
-    products = []; // Xóa danh sách sản phẩm cũ
     notifyListeners();
 
     try {
+      // Kiểm tra cache nếu không bắt buộc refresh
+      if (!forceRefresh) {
+        final cachedData = await HomeCacheService.getCachedProducts(_categoryId);
+        if (cachedData != null) {
+          print('🚀 Sử dụng cache cho categoryId: $_categoryId');
+          products = List<dynamic>.from(cachedData['products']);
+          categoryName = cachedData['categoryName'] ?? '';
+          IdCatalogInitial = cachedData['IdCatalogInitial'] ?? '';
+          isLoading = false;
+          notifyListeners();
+          return;
+        }
+      }
+
+      print('🌐 Tải dữ liệu sản phẩm từ API cho categoryId: $_categoryId');
+      
+      // Xóa cache cũ nếu force refresh
+      if (forceRefresh) {
+        await HomeCacheService.clearCachedProducts(_categoryId);
+      }
+
+      products = []; // Xóa danh sách sản phẩm cũ
+      notifyListeners();
+
       List<dynamic> allProducts = [];
       String newCategoryName = '';
       String newIdCatalog = '';
@@ -165,6 +203,14 @@ class HomeController extends ChangeNotifier {
         IdCatalogInitial = newIdCatalog;
       }
 
+      // Cache dữ liệu sản phẩm
+      final cacheData = {
+        'products': products,
+        'categoryName': categoryName,
+        'IdCatalogInitial': IdCatalogInitial,
+      };
+      await HomeCacheService.cacheProducts(_categoryId, cacheData);
+
       isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -186,7 +232,19 @@ class HomeController extends ChangeNotifier {
     selectedFilterString = filterId;
     isLoading = true;
     notifyListeners();
-    fetchProducts();
+    fetchProducts(forceRefresh: true); // Force refresh khi thay đổi filter
+  }
+
+  /// Refresh dữ liệu và xóa cache
+  Future<void> refreshData() async {
+    print('🔄 Làm mới dữ liệu và xóa cache');
+    await fetchProducts(forceRefresh: true);
+  }
+
+  /// Xóa toàn bộ cache
+  Future<void> clearAllCache() async {
+    await HomeCacheService.clearAllCache();
+    print('🗑️ Đã xóa toàn bộ cache');
   }
 
   String findCategoryNameById(Map<String, dynamic> data, int id,

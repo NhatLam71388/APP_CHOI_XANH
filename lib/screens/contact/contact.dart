@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/widgets/button_widget.dart';
 import 'package:flutter_application_1/widgets/input_widget.dart';
+import 'package:flutter_application_1/widgets/loading_widget.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
 
@@ -84,10 +85,7 @@ class _ContactFormState extends State<ContactForm> {
     double fontSize = screenWidth * 0.037;
 
     if (controller.isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator(color: Color(0xff0066FF))),
-      );
+      return LoadingWidget();
     }
 
     if (controller.errorMessage.isNotEmpty) {
@@ -268,27 +266,41 @@ class _ContactFormState extends State<ContactForm> {
 
   Widget _buildInfoRow(
       IconData icon, String textStart, String? textEnd, double fontSize) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: fontSize + 4),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              text: textStart,
-              style: TextStyle(fontSize: fontSize, color: Colors.black),
-              children: [
-                if (textEnd != null && textEnd.isNotEmpty)
-                  TextSpan(
-                    text: " $textEnd",
-                    style: TextStyle(fontSize: fontSize, color: Colors.blue),
-                  ),
-              ],
+    String fullText = textStart;
+    if (textEnd != null && textEnd.isNotEmpty) {
+      fullText = textStart.isEmpty ? textEnd : '$textStart $textEnd';
+    }
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF198754).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              icon,
+              size: 20,
+              color: const Color(0xFF198754),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              fullText,
+              style: TextStyle(
+                fontSize: fontSize,
+                color: const Color(0xFF1a1a1a),
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

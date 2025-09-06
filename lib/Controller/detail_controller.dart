@@ -328,3 +328,4 @@ class DetailController extends ChangeNotifier {
 
 
 
+

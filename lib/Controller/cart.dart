@@ -121,6 +121,12 @@ class CartController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeItemFromLocal(String productId) {
+    cartItems.removeWhere((item) => item.id == productId);
+    isSelectAll = cartItems.isNotEmpty && cartItems.every((item) => item.isSelect);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     addressController.dispose();

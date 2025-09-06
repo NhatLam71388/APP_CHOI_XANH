@@ -5,6 +5,7 @@ import 'package:flutter_application_1/screens/home/components/news_card.dart';
 import 'package:flutter_application_1/screens/home/components/product_card.dart';
 import 'package:flutter_application_1/screens/home/components/filter_bottomsheet.dart';
 import 'package:flutter_application_1/screens/home/components/technicalspec_item.dart';
+import 'package:flutter_application_1/widgets/empty_state_widget.dart';
 import 'package:flutter_application_1/widgets/until.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
@@ -83,12 +84,7 @@ class HomePageState extends State<HomePage> {
           } else if (controller.categoryId == 35028) {
             bodyContent = ContactForm();
           } else if (controller.products.isEmpty) {
-            bodyContent = const Center(
-              child: Text(
-                'Không có dữ liệu',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            );
+            bodyContent = EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off);
           } else if (controller.categoryId == 0) {
             bodyContent = SafeArea(
               child: RefreshIndicator(
@@ -98,12 +94,7 @@ class HomePageState extends State<HomePage> {
                     ? ListView(
                         children: const [
                           SizedBox(height: 200),
-                          Center(
-                            child: Text(
-                              'Không có dữ liệu',
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
-                            ),
-                          ),
+                          EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off)
                         ],
                       )
                     : Padding(
@@ -159,7 +150,7 @@ class HomePageState extends State<HomePage> {
 
             bodyContent = RefreshIndicator(
               color: const Color(0xff0066FF),
-              onRefresh: controller.fetchProducts,
+              onRefresh: controller.refreshData, // Sử dụng hàm refresh mới
               child: ListView(
                 padding: const EdgeInsets.all(8.0),
                 children: groupedByCategory.entries.map((entry) {
@@ -233,17 +224,12 @@ class HomePageState extends State<HomePage> {
 
             bodyContent = RefreshIndicator(
               color: const Color(0xff0066FF),
-              onRefresh: controller.fetchProducts,
+              onRefresh: controller.refreshData, // Sử dụng hàm refresh mới
               child: visibleProducts.isEmpty
                   ? ListView(
                       children: const [
                         SizedBox(height: 200),
-                        Center(
-                          child: Text(
-                            'Không có dữ liệu',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                        ),
+                        EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off)
                       ],
                     )
                   : Padding(

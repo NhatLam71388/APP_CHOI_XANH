@@ -3,7 +3,7 @@ import 'package:animate_do/animate_do.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final IconData icon;
   final Color? color;
   final double? iconSize;
@@ -15,7 +15,7 @@ class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
     super.key,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.icon,
     this.color,
     this.iconSize,
@@ -58,7 +58,7 @@ class EmptyStateWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              subtitle,
+              subtitle!,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,

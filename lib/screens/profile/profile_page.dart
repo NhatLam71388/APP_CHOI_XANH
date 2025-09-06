@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/login/login_view.dart';
 import 'package:flutter_application_1/widgets/card_widget.dart';
+import 'package:flutter_application_1/widgets/button_widget.dart';
 
 import '../../Constant/app_colors.dart';
 import '../../Controller/profile.dart';
@@ -60,18 +61,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xff0066FF).withOpacity(0.05),
-                      const Color(0xff0066FF).withOpacity(0.02),
+                      const Color(0xFF198754).withOpacity(0.05),
+                      const Color(0xFF198754).withOpacity(0.02),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0xff0066FF).withOpacity(0.1),
+                    color: const Color(0xFF198754).withOpacity(0.1),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xff0066FF).withOpacity(0.08),
+                      color: const Color(0xFF198754).withOpacity(0.08),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                       spreadRadius: 0,
@@ -88,14 +89,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              const Color(0xff0066FF).withOpacity(0.1),
-                              const Color(0xff0066FF).withOpacity(0.05),
+                              const Color(0xFF198754).withOpacity(0.1),
+                              const Color(0xFF198754).withOpacity(0.05),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xff0066FF).withOpacity(0.2),
+                              color: const Color(0xFF198754).withOpacity(0.2),
                               blurRadius: 15,
                               offset: const Offset(0, 6),
                               spreadRadius: 0,
@@ -107,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           'asset/avatar.png',
                           width: 60,
                           height: 60,
-                          color: const Color(0xff0066FF),
+                          color: const Color(0xFF198754),
                         ),
                       ),
                       const SizedBox(width: 20),
@@ -131,10 +132,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xff0066FF).withOpacity(0.1),
+                                color: const Color(0xFF198754).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xff0066FF).withOpacity(0.3),
+                                  color: const Color(0xFF198754).withOpacity(0.3),
                                   width: 1,
                                 ),
                               ),
@@ -144,13 +145,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                   Icon(
                                     Icons.check_circle,
                                     size: 16,
-                                    color: const Color(0xff0066FF),
+                                    color: const Color(0xFF198754),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Bạn đã đăng nhập',
                                     style: TextStyle(
-                                      color: const Color(0xff0066FF),
+                                      color: const Color(0xFF198754),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -175,97 +176,38 @@ class _ProfilePageState extends State<ProfilePage> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Container(
+                                  child: CustomButton(
+                                    text: 'Đăng nhập',
                                     height: 40,
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Color(0xff0066FF),
-                                          Color(0xff0052CC),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xff0066FF).withOpacity(0.3),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                          spreadRadius: 0,
+                                    fontSize: 14,
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const LoginView(),
                                         ),
-                                      ],
-                                    ),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const LoginView(),
-                                          ),
-                                        ).then((_) {
-                                          _logic.loadLoginStatus().then((_) {
-                                            setState(() {});
-                                          });
+                                      ).then((_) {
+                                        _logic.loadLoginStatus().then((_) {
+                                          setState(() {});
                                         });
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Đăng nhập',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
+                                      });
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Container(
+                                  child: CustomButton.outlined(
+                                    text: 'Đăng ký',
                                     height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: const Color(0xff0066FF).withOpacity(0.3),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const Register(),
-                                          ),
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: const Color(0xff0066FF),
-                                        elevation: 0,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
+                                    fontSize: 14,
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const Register(),
                                         ),
-                                      ),
-                                      child: const Text(
-                                        'Đăng ký',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
