@@ -213,7 +213,7 @@ class DetailController extends ChangeNotifier {
       };
 
       final response = await http.post(
-        Uri.parse('https://demochung.125.atoz.vn/ww1/save.binhluan.asp'),
+        Uri.parse('${APIService.baseUrl}/ww1/save.binhluan.asp'),
         body: formData,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

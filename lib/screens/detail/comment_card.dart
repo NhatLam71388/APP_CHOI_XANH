@@ -153,7 +153,7 @@ class _CommentCardState extends State<CommentCard>
 
     try {
       final response = await http.get(
-        Uri.parse('https://demochung.125.atoz.vn/ww1/save.binhluan.thich.asp?id=${widget.productId}&id2=${widget.commentId}'),
+        Uri.parse('${APIService.baseUrl}/ww1/save.binhluan.thich.asp?id=${widget.productId}&id2=${widget.commentId}'),
         headers: {'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
@@ -210,7 +210,7 @@ class _CommentCardState extends State<CommentCard>
       };
 
       final response = await http.post(
-        Uri.parse('https://demochung.125.atoz.vn/ww1/save.binhluan.asp'),
+        Uri.parse('${APIService.baseUrl}/ww1/save.binhluan.asp'),
         body: formData,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -886,7 +886,7 @@ class _ReplyCardState extends State<ReplyCard>
 
     try {
       final response = await http.get(
-        Uri.parse('https://demochung.125.atoz.vn/ww1/save.binhluan.thich.asp?id=${widget.productId}&id2=${widget.replyId}'),
+        Uri.parse('${APIService.baseUrl}/ww1/save.binhluan.thich.asp?id=${widget.productId}&id2=${widget.replyId}'),
         headers: {'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 

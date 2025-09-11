@@ -73,15 +73,15 @@ class CarthistoryPageState extends State<CarthistoryPage>
   }
 
   Future<void> loadOrderHistory() async {
-    try {
-      final result =
-          await APICarthistoryService.fetchOrderHistory(Global.email);
-      setState(() {
-        orderHistory = result;
-      });
-    } catch (e) {
-      print('❌ Lỗi load lịch sử: $e');
-    }
+    // try {
+    //   final result =
+    //       await APICarthistoryService.fetchOrderHistory(Global.email);
+    //   setState(() {
+    //     orderHistory = result;
+    //   });
+    // } catch (e) {
+    //   print('❌ Lỗi load lịch sử: $e');
+    // }
   }
 
   @override

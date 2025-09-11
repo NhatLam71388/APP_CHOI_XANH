@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class APIService {
-  static const String baseUrl = 'https://demochung.125.atoz.vn';
+  static const String baseUrl = 'https://demodienmay.125.atoz.vn';
   static const String loginUrl = '$baseUrl/ww1/userlogin.asp';
 
   static Future<List<String>> fetchProductImages(String productId) async {

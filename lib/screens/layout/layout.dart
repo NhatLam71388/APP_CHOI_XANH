@@ -26,7 +26,7 @@ class _AllPageViewState extends State<AllPageView> {
         _controller.goToDetail(product, 'home');
       },
       onTapCartHistory: () {
-        _controller.goToCartHistory();
+        // _controller.goToCartHistory();
       },
       onTapPersonalInfo: () {
         _controller.goToPersonalInfo();

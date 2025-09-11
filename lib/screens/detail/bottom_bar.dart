@@ -31,12 +31,16 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Màu xanh lá chủ đạo
+    const Color primaryGreen = Color(0xFF2E7D32);
+    const Color lightGreen = Color(0xFF4CAF50);
+
     return Positioned(
       left: 0,
       right: 0,
-      bottom: 0,
+      bottom: 10,
       child: Container(
-        height: 100,
+        height: 80,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.only(
@@ -46,7 +50,7 @@ class BottomActionBar extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
+              blurRadius: 15,
               offset: const Offset(0, -5),
               spreadRadius: 0,
             ),
@@ -55,16 +59,16 @@ class BottomActionBar extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
                 // Thêm vào giỏ hàng button (chỉ icon)
                 Container(
-                  width: 80,
-                  height: 60,
+                  width: 60,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xff0066FF).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    color: lightGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: ElevatedButton(
                     onPressed: () async {
@@ -81,44 +85,44 @@ class BottomActionBar extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      foregroundColor: const Color(0xff0066FF),
+                      foregroundColor: primaryGreen,
                       padding: EdgeInsets.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(45),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                       shadowColor: Colors.transparent,
                     ),
                     child: const Icon(
                       Icons.shopping_cart_outlined,
-                      size: 32,
-                      color: Color(0xff0066FF),
+                      size: 24,
+                      color: primaryGreen,
                     ),
                   ),
                 ),
-                
-                const SizedBox(width: 16),
-                
+
+                const SizedBox(width: 12),
+
                 // Mua ngay button
                 Expanded(
                   child: Container(
-                    height: 60,
+                    height: 48,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xff0066FF),
-                          Color(0xff0052CC),
+                          primaryGreen,
+                          lightGreen,
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xff0066FF).withOpacity(0.4),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
+                          color: primaryGreen.withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
                           spreadRadius: 0,
                         ),
                       ],
@@ -142,7 +146,7 @@ class BottomActionBar extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
                         shadowColor: Colors.transparent,
@@ -151,22 +155,22 @@ class BottomActionBar extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Icon(
                               Icons.flash_on,
-                              size: 18,
+                              size: 14,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           const Text(
                             'Mua ngay',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),

@@ -5,6 +5,7 @@ import 'package:flutter_application_1/widgets/custom_snackbar.dart';
 import 'package:flutter_application_1/widgets/until.dart';
 import 'package:http/http.dart' as http;
 import '../screens/login/login_view.dart';
+import '../services/api_service.dart';
 
 class RegisterController extends ChangeNotifier {
   final TextEditingController emailController = TextEditingController();
@@ -99,7 +100,7 @@ class RegisterController extends ChangeNotifier {
     required String username,
   }) async {
     try {
-      final Uri url = Uri.parse('https://demochung.125.atoz.vn/ww1/userlogin.asp');
+      final Uri url = Uri.parse('${APIService.baseUrl}/ww1/userlogin.asp');
       
       // Tạo payload theo yêu cầu
       final Map<String, String> body = {

@@ -12,6 +12,7 @@ import 'package:flutter_application_1/widgets/cart_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/Controller/cart.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../Constant/app_colors.dart';
 import '../../Controller/home.dart';
@@ -79,11 +80,78 @@ class PageCartState extends State<PageCart> {
                       Column(
                         children: [
                           if (controller.cartItems.isNotEmpty)
-                            CheckboxListTile(
-                              title: const Text('Chọn tất cả'),
-                              value: controller.isSelectAll,
-                              onChanged: controller.toggleSelectAll,
-                              activeColor: const Color(0xff0066FF),
+                            Container(
+                              margin: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    const Color(0xFF198754),
+                                    const Color(0xFF20C997),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF198754).withOpacity(0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                    spreadRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => controller.toggleSelectAll(!controller.isSelectAll),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(15),
+                                        ),
+                                        child: Icon(
+                                          controller.isSelectAll
+                                              ? Icons.check_box
+                                              : Icons.check_box_outline_blank,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              controller.isSelectAll ? 'Đã chọn tất cả' : 'Chọn tất cả',
+                                              style: TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${controller.cartItems.length} sản phẩm trong giỏ hàng',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.white.withOpacity(0.9),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           Expanded(
                             child: controller.cartItems.isEmpty
@@ -93,74 +161,101 @@ class PageCartState extends State<PageCart> {
                               icon: Icons.shopping_cart_outlined,
                               color: Color(0xFF198754),
                             )
-                                : ListView.builder(
-                                    padding: const EdgeInsets.only(bottom: 70),
-                                    itemCount: controller.cartItems.length + 1,
-                                    itemBuilder: (context, index) {
-                                      if (index == controller.cartItems.length) {
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 8),
-                                          padding: const EdgeInsets.all(16),
-                                          color: Colors.white,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              if (controller.hasSelectedItems) ...[
-                                                buildInfoRow(
-                                                    "Tiền đơn hàng",
-                                                    formatCurrency(calculateTotalPrice(controller.cartItems).toStringAsFixed(0)) + "₫"),
-                                                const SizedBox(height: 8),
-                                                buildInfoRow("Phí vận chuyển", '${formatCurrency(controller.phiVanChuyen)}₫'),
-                                                const Divider(height: 20, color: Colors.black12),
-                                                buildInfoRow("Tổng thanh toán", '${formatCurrency(controller.tongThanhToan)}₫', isTotal: true),
-                                              ]
-                                            ],
+                                : AnimationLimiter(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10).copyWith(bottom: 70),
+                                itemCount: controller.cartItems.length + 1,
+                                itemBuilder: (context, index) {
+                                  if (index == controller.cartItems.length) {
+                                    return AnimationConfiguration.staggeredList(
+                                      position: index,
+                                      duration: const Duration(milliseconds: 600),
+                                      child: SlideAnimation(
+                                        verticalOffset: 50.0,
+                                        child: FadeInAnimation(
+                                          child: Container(
+                                            margin: const EdgeInsets.symmetric(vertical: 8),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFF198754).withOpacity(0.08),
+                                                  blurRadius: 20,
+                                                  offset: const Offset(0, 4),
+                                                  spreadRadius: 0,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                if (controller.hasSelectedItems) ...[
+                                                  buildInfoRow(
+                                                      "Tiền đơn hàng",
+                                                      formatCurrency(calculateTotalPrice(controller.cartItems).toStringAsFixed(0)) + "₫"),
+                                                  const SizedBox(height: 8),
+                                                  buildInfoRow("Phí vận chuyển", '${formatCurrency(controller.phiVanChuyen)}₫'),
+                                                  const Divider(height: 20, color: Colors.black12),
+                                                  buildInfoRow("Tổng thanh toán", '${formatCurrency(controller.tongThanhToan)}₫', isTotal: true),
+                                                ]
+                                              ],
+                                            ),
                                           ),
-                                        );
-                                      } else {
-                                        final item = controller.cartItems[index];
-                                        return ItemCart(
-                                          key: ValueKey('cart_item_${item.id}'),
-                                          cartitemCount: widget.cartitemCount,
-                                          userId: Global.email,
-                                          item: item,
-                                          isSelected: item.isSelect,
-                                          onTap: () {
-                                            widget.onProductTap(item);
-                                          },
-                                          onSelectedChanged: (value) {
-                                            controller.updateItemSelection(item, value);
-                                          },
-                                          onIncrease: () async {
-                                            // Chỉ cập nhật local state, không reload giỏ hàng
-                                            item.quantity++;
-                                            controller.notifyListeners();
-                                          },
-                                          onDecrease: () async {
-                                            if (item.quantity > 1) {
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    final item = controller.cartItems[index];
+                                    return AnimationConfiguration.staggeredList(
+                                      position: index,
+                                      duration: const Duration(milliseconds: 600),
+                                      child: SlideAnimation(
+                                        verticalOffset: 50.0,
+                                        child: FadeInAnimation(
+                                          child: ItemCart(
+                                            cartitemCount: widget.cartitemCount,
+                                            userId: Global.email,
+                                            item: item,
+                                            isSelected: item.isSelect,
+                                            onTap: () {
+                                              widget.onProductTap(item);
+                                            },
+                                            onSelectedChanged: (value) {
+                                              controller.updateItemSelection(item, value);
+                                            },
+                                            onIncrease: () async {
                                               // Chỉ cập nhật local state, không reload giỏ hàng
-                                              item.quantity--;
+                                              item.quantity++;
                                               controller.notifyListeners();
-                                            }
-                                          },
-                                          OnChanged: () async {
-                                            // Reload giỏ hàng khi có thay đổi (xóa item)
-                                            await controller.loadCartItems(widget.cartitemCount);
-                                          },
-                                          onItemRemoved: (productId) {
-                                            // Xóa item khỏi local state ngay lập tức để tránh UI glitch
-                                            controller.removeItemFromLocal(productId);
-                                          },
-                                        );
-                                      }
-                                    }),
+                                            },
+                                            onDecrease: () async {
+                                              if (item.quantity > 1) {
+                                                // Chỉ cập nhật local state, không reload giỏ hàng
+                                                item.quantity--;
+                                                controller.notifyListeners();
+                                              }
+                                            },
+                                            OnChanged: () async {
+                                              // Không cần reload giỏ hàng khi chỉ thay đổi số lượng
+                                              // await controller.loadCartItems(widget.cartitemCount);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom: -10,
+                        bottom: 15,
                         child: CartBottomBar(
                           isOrderEnabled: controller.hasSelectedItems,
                           tongThanhToan: controller.tongThanhToan,

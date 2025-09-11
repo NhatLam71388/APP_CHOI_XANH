@@ -18,104 +18,37 @@ class CustomBottomNavBar extends StatefulWidget {
   State<CustomBottomNavBar> createState() => _CustomBottomNavBarState();
 }
 
-class _CustomBottomNavBarState extends State<CustomBottomNavBar>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _animationControllers;
-  late List<Animation<double>> _scaleAnimations;
-  late List<Animation<double>> _bounceAnimations;
-
+class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   // Màu xanh lá chủ đạo
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color lightGreen = Color(0xFF4CAF50);
   static const Color accentGreen = Color(0xFF66BB6A);
   static const Color darkGreen = Color(0xFF1B5E20);
 
-  @override
-  void initState() {
-    super.initState();
-    _animationControllers = List.generate(4, (index) => 
-      AnimationController(
-        duration: const Duration(milliseconds: 300),
-        vsync: this,
-      )
-    );
-
-    _scaleAnimations = _animationControllers.map((controller) =>
-      Tween<double>(begin: 1.0, end: 1.2).animate(
-        CurvedAnimation(parent: controller, curve: Curves.elasticOut)
-      )
-    ).toList();
-
-    _bounceAnimations = _animationControllers.map((controller) =>
-      Tween<double>(begin: 0.0, end: -8.0).animate(
-        CurvedAnimation(parent: controller, curve: Curves.elasticOut)
-      )
-    ).toList();
-
-    // Trigger animation for current index
-    if (widget.currentIndex < _animationControllers.length) {
-      _animationControllers[widget.currentIndex].forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(CustomBottomNavBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentIndex != widget.currentIndex) {
-      // Reset old animation
-      if (oldWidget.currentIndex < _animationControllers.length) {
-        _animationControllers[oldWidget.currentIndex].reverse();
-      }
-      // Start new animation
-      if (widget.currentIndex < _animationControllers.length) {
-        _animationControllers[widget.currentIndex].forward();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _animationControllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  Widget _buildAnimatedIcon({
+  Widget _buildIcon({
     required int index,
     required String selectedAsset,
     required String unselectedAsset,
     required double size,
   }) {
-    return AnimatedBuilder(
-      animation: _animationControllers[index],
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, _bounceAnimations[index].value),
-          child: Transform.scale(
-            scale: _scaleAnimations[index].value,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: widget.currentIndex == index 
-                    ? lightGreen.withOpacity(0.2)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: widget.currentIndex == index
-                    ? Border.all(color: lightGreen.withOpacity(0.3), width: 1)
-                    : null,
-              ),
-              child: ImageIcon(
-                widget.currentIndex == index 
-                    ? AssetImage(selectedAsset) 
-                    : AssetImage(unselectedAsset),
-                size: size,
-                color: widget.currentIndex == index ? primaryGreen : Colors.grey[600],
-              ),
-            ),
-          ),
-        );
-      },
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: widget.currentIndex == index
+            ? lightGreen.withOpacity(0.2)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: widget.currentIndex == index
+            ? Border.all(color: lightGreen.withOpacity(0.3), width: 1)
+            : null,
+      ),
+      child: ImageIcon(
+        widget.currentIndex == index
+            ? AssetImage(selectedAsset)
+            : AssetImage(unselectedAsset),
+        size: size,
+        color: widget.currentIndex == index ? primaryGreen : Colors.grey[600],
+      ),
     );
   }
 
@@ -123,36 +56,34 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
     required int count,
     required Color badgeColor,
   }) {
-    return count > 0 
-        ? AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.elasticOut,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: badgeColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: badgeColor.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            constraints: const BoxConstraints(
-              minWidth: 18,
-              minHeight: 18,
-            ),
-            child: Text(
-              count > 99 ? '99+' : '$count',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          )
+    return count > 0
+        ? Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: badgeColor.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      constraints: const BoxConstraints(
+        minWidth: 18,
+        minHeight: 18,
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    )
         : const SizedBox.shrink();
   }
 
@@ -182,11 +113,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
           backgroundColor: Colors.white,
           elevation: 0,
           currentIndex: widget.currentIndex,
-          onTap: (index) {
-            widget.onTap(index);
-            // Trigger haptic feedback
-            // HapticFeedback.lightImpact();
-          },
+          onTap: widget.onTap,
           selectedItemColor: primaryGreen,
           unselectedItemColor: Colors.grey[600],
           selectedLabelStyle: const TextStyle(
@@ -200,7 +127,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
           type: BottomNavigationBarType.fixed,
           items: [
             BottomNavigationBarItem(
-              icon: _buildAnimatedIcon(
+              icon: _buildIcon(
                 index: 0,
                 selectedAsset: 'asset/homesl.png',
                 unselectedAsset: 'asset/home.png',
@@ -212,7 +139,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _buildAnimatedIcon(
+                  _buildIcon(
                     index: 1,
                     selectedAsset: 'asset/favouritesl.png',
                     unselectedAsset: 'asset/favourite.png',
@@ -234,7 +161,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _buildAnimatedIcon(
+                  _buildIcon(
                     index: 2,
                     selectedAsset: 'asset/cartsl.png',
                     unselectedAsset: 'asset/shopping-cart.png',
@@ -253,7 +180,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar>
               label: 'Giỏ hàng',
             ),
             BottomNavigationBarItem(
-              icon: _buildAnimatedIcon(
+              icon: _buildIcon(
                 index: 3,
                 selectedAsset: 'asset/usersl.png',
                 unselectedAsset: 'asset/user.png',
