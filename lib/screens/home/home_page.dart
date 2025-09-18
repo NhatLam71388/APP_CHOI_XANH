@@ -5,12 +5,12 @@ import 'package:flutter_application_1/screens/home/components/news_card.dart';
 import 'package:flutter_application_1/screens/home/components/product_card.dart';
 import 'package:flutter_application_1/screens/home/components/filter_bottomsheet.dart';
 import 'package:flutter_application_1/screens/home/components/technicalspec_item.dart';
-import 'package:flutter_application_1/widgets/empty_state_widget.dart';
 import 'package:flutter_application_1/widgets/until.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/category_model.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../../widgets/loading_widget.dart';
 import '../contact/contact.dart';
 
@@ -84,7 +84,24 @@ class HomePageState extends State<HomePage> {
           } else if (controller.categoryId == 35028) {
             bodyContent = ContactForm();
           } else if (controller.products.isEmpty) {
-            bodyContent = EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off);
+            bodyContent = RefreshIndicator(
+              color: const Color(0xff0066FF),
+              onRefresh: controller.refreshData,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 200),
+                  Center(
+                    child: EmptyStateWidget(
+                      title: 'Mất kết nối',
+                      subtitle: 'Vui lòng kiểm tra kết nối mạng\nvà thử lại sau',
+                      icon: Icons.wifi_off,
+                      color: Color(0xFF198754),
+                    ),
+                  ),
+                ],
+              ),
+            );
           } else if (controller.categoryId == 0) {
             bodyContent = SafeArea(
               child: RefreshIndicator(
@@ -94,7 +111,12 @@ class HomePageState extends State<HomePage> {
                     ? ListView(
                         children: const [
                           SizedBox(height: 200),
-                          EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off)
+                          Center(
+                            child: Text(
+                              'Không có dữ liệu',
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                          ),
                         ],
                       )
                     : Padding(
@@ -150,7 +172,7 @@ class HomePageState extends State<HomePage> {
 
             bodyContent = RefreshIndicator(
               color: const Color(0xff0066FF),
-              onRefresh: controller.refreshData, // Sử dụng hàm refresh mới
+              onRefresh: controller.refreshData,
               child: ListView(
                 padding: const EdgeInsets.all(8.0),
                 children: groupedByCategory.entries.map((entry) {
@@ -224,12 +246,17 @@ class HomePageState extends State<HomePage> {
 
             bodyContent = RefreshIndicator(
               color: const Color(0xff0066FF),
-              onRefresh: controller.refreshData, // Sử dụng hàm refresh mới
+              onRefresh: controller.refreshData,
               child: visibleProducts.isEmpty
                   ? ListView(
                       children: const [
                         SizedBox(height: 200),
-                        EmptyStateWidget(title: "Không có dữ liệu", subtitle: "Kiểm tra kết nối hoặc làm mới để thử lại.", icon: Icons.cloud_off)
+                        Center(
+                          child: Text(
+                            'Không có dữ liệu',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        ),
                       ],
                     )
                   : Padding(

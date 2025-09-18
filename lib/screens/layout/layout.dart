@@ -19,7 +19,7 @@ class _AllPageViewState extends State<AllPageView> {
   void initState() {
     super.initState();
     _controller = AllPageController();
-    
+
     // Initialize pages with callbacks
     _controller.initializePages(
       onProductTap: (product) {
@@ -70,76 +70,82 @@ class _AllPageViewState extends State<AllPageView> {
       builder: (context, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: Scaffold(
-            drawer: DanhMucDrawer(
-              onCategorySelected: (int id) async {
-                await Navigator.of(context).maybePop();
-                _controller.onCategorySelected(id);
-              },
-            ),
-            body: Stack(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: kToolbarHeight,
-                    bottom: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
+          home: WillPopScope(
+            onWillPop: () async {
+              // Chặn hành vi thoát ứng dụng khi nhấn back/exit
+              return false;
+            },
+            child: Scaffold(
+              drawer: DanhMucDrawer(
+                onCategorySelected: (int id) async {
+                  await Navigator.of(context).maybePop();
+                  _controller.onCategorySelected(id);
+                },
+              ),
+              body: Stack(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: kToolbarHeight,
+                      bottom: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom,
+                    ),
+                    child: IndexedStack(
+                      index: _controller.getPageIndex(),
+                      children: [
+                        _controller.homePage,
+                        _controller.favouritePage,
+                        _controller.cartPage,
+                        _controller.registerPage,
+                        _controller.profilePage,
+                        _controller.detailPage ?? Container(),
+                        _controller.carthistoryPage ?? Container(),
+                        _controller.personalInfoPage,
+                        _controller.notificationPage,
+                      ],
+                    ),
                   ),
-                  child: IndexedStack(
-                    index: _controller.getPageIndex(),
-                    children: [
-                      _controller.homePage,
-                      _controller.favouritePage,
-                      _controller.cartPage,
-                      _controller.registerPage,
-                      _controller.profilePage,
-                      _controller.detailPage ?? Container(),
-                      _controller.carthistoryPage ?? Container(),
-                      _controller.personalInfoPage,
-                      _controller.notificationPage,
-                    ],
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SearchAppBar(
+                      controller: _controller.searchController,
+                      onSearch: (String keyword) {
+                        _controller.onSearch(keyword);
+                      },
+                    ),
                   ),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: SearchAppBar(
-                    controller: _controller.searchController,
-                    onSearch: (String keyword) {
-                      _controller.onSearch(keyword);
-                    },
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: SafeArea(
-                    top: false,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                      ),
-                      child: ValueListenableBuilder<int>(
-                        valueListenable: _controller.cartItemCountNotifier,
-                        builder: (context, cartCount, _) {
-                          return ValueListenableBuilder<int>(
-                            valueListenable: _controller.wishlistItemCountNotifier,
-                            builder: (context, wishlistCount, _) {
-                              return CustomBottomNavBar(
-                                cartitemCount: cartCount,
-                                wishlistItemCount: wishlistCount,
-                                currentIndex: _controller.currentIndex,
-                                onTap: _controller.onTabTapped,
-                              );
-                            },
-                          );
-                        },
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      top: false,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                        ),
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: _controller.cartItemCountNotifier,
+                          builder: (context, cartCount, _) {
+                            return ValueListenableBuilder<int>(
+                              valueListenable: _controller.wishlistItemCountNotifier,
+                              builder: (context, wishlistCount, _) {
+                                return CustomBottomNavBar(
+                                  cartitemCount: cartCount,
+                                  wishlistItemCount: wishlistCount,
+                                  currentIndex: _controller.currentIndex,
+                                  onTap: _controller.onTabTapped,
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
