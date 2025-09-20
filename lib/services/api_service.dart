@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class APIService {
-  static const String baseUrl = 'https://demodienmay.125.atoz.vn';
+  static const String baseUrl = 'https://nhipcautamgiao.net';
   static const String loginUrl = '$baseUrl/ww1/userlogin.asp';
 
   static Future<List<String>> fetchProductImages(String productId) async {
@@ -85,8 +85,8 @@ class APIService {
     try {
       final response = await http.get(Uri.parse(url)).timeout(Duration(seconds: 5));
 
-      // print('response.statusCode: ${response.statusCode}');
-      // print('response.body: ${response.body}');
+      print('response.statusCode: ${response.statusCode}');
+      print('response.body: ${response.body}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -328,7 +328,7 @@ class APIService {
           final data = decoded[0]['data'] as List<dynamic>;
           
           // Lấy categoryId mặc định từ tieude "Trang chủ"
-          final defaultCategoryId = await getCategoryIdByTitle('Trang chủ') ?? 35001;
+          final defaultCategoryId = await getCategoryIdByTitle('Trang chủ') ?? 1;
           
           return data.map<Map<String, dynamic>>((item) {
             return {

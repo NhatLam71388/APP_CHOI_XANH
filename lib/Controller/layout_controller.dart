@@ -19,7 +19,7 @@ import '../services/api_service.dart';
 
 class AllPageController extends ChangeNotifier {
   int _currentIndex = 0;
-  final ValueNotifier<int> categoryNotifier = ValueNotifier(35001); // Sẽ được cập nhật từ tieude
+  final ValueNotifier<int> categoryNotifier = ValueNotifier(1); // Sử dụng id: 1 cho "Trang chủ"
   final ValueNotifier<int> filterNotifier = ValueNotifier(0);
 
   final GlobalKey<favouritePageState> favouritePageKey = GlobalKey<favouritePageState>();
@@ -39,10 +39,9 @@ class AllPageController extends ChangeNotifier {
 
   Future<void> initializeDefaultCategory() async {
     try {
-      final categoryId = await APIService.getCategoryIdByTitle('Trang chủ');
-      if (categoryId != null) {
-        categoryNotifier.value = categoryId;
-      }
+      // Sử dụng id: 1 cho "Trang chủ" từ API mới
+      categoryNotifier.value = 1;
+      print('✅ Đã khởi tạo categoryId mặc định: 1 (Trang chủ)');
     } catch (e) {
       print('Không thể khởi tạo categoryId mặc định: $e');
     }

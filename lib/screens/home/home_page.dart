@@ -72,9 +72,12 @@ class HomePageState extends State<HomePage> {
         builder: (context, controller, child) {
           final categoryTitle = controller.getCategoryTitleByCategoryId(controller.categoryId);
           final isTinTuc = categoryTitle == 'Công nghệ'; // Dựa trên tieude từ API
-          final isContact = categoryTitle == 'Liên hệ';
-          final isHomePage = categoryTitle == 'Trang chủ';
+          final isContact = categoryTitle == 'Liên hệ' || controller.categoryId == 101;
+          final isHomePage = categoryTitle == 'Trang chủ' || controller.categoryId == 1;
           final isSearch = categoryTitle == 'Tìm kiếm';
+          
+          print('🔍 HomePage - CategoryId: ${controller.categoryId}, CategoryTitle: $categoryTitle');
+          print('🔍 HomePage - isContact: $isContact, isHomePage: $isHomePage, isSearch: $isSearch');
           
           // Các danh mục hiển thị 1 cột dựa trên tieude
           const List<String> singleColumnTitles = ['Công nghệ'];
@@ -171,7 +174,7 @@ class HomePageState extends State<HomePage> {
           } else if (isHomePage) {
             final Map<int, List<dynamic>> groupedByCategory = {};
             for (var product in controller.products) {
-              int catId = product['categoryId'] ?? controller.getCategoryIdByTitle('Trang chủ') ?? 35001;
+              int catId = product['categoryId'] ?? controller.getCategoryIdByTitle('Trang chủ') ?? 1;
               groupedByCategory.putIfAbsent(catId, () => []).add(product);
             }
 

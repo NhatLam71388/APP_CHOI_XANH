@@ -29,6 +29,10 @@ class HomeController extends ChangeNotifier {
   Future<void> init(ValueNotifier<int> categoryNotifier) async {
     _categoryId = categoryNotifier.value;
     await loadLoginStatus();
+    
+    // Xóa cache khi khởi tạo để đảm bảo tải dữ liệu mới
+    await clearAllCache();
+    
     // Tải home modules từ API mới
     await fetchHomeModules();
     await fetchDanhMucFromAPI();
@@ -47,6 +51,7 @@ class HomeController extends ChangeNotifier {
     try {
       homeModules = await APIService.fetchHomeModules();
       print('Home modules loaded: ${homeModules.length} items');
+      print('🔍 Home modules data: $homeModules');
     } catch (e) {
       print('Lỗi khi tải home modules: $e');
       homeModules = [];
@@ -70,14 +75,19 @@ class HomeController extends ChangeNotifier {
     try {
       // Tìm trong homeModules trước
       final moduleInfo = getModuleInfoByCategoryId(categoryId);
+      print('🔍 getCategoryTitleByCategoryId - categoryId: $categoryId, moduleInfo: $moduleInfo');
+      
       if (moduleInfo != null && moduleInfo['tieude'] != null) {
+        print('🔍 Found in homeModules: ${moduleInfo['tieude']}');
         return moduleInfo['tieude'];
       }
       
       // Nếu không tìm thấy trong homeModules, tìm trong danhMucData
-      return findCategoryNameById(danhMucData, categoryId, parentOnly: true);
+      final danhMucTitle = findCategoryNameById(danhMucData, categoryId, parentOnly: true);
+      print('🔍 Found in danhMucData: $danhMucTitle');
+      return danhMucTitle;
     } catch (e) {
-      print('Không tìm thấy tieude cho categoryId: $categoryId');
+      print('Không tìm thấy tieude cho categoryId: $categoryId, error: $e');
       return '';
     }
   }
@@ -182,8 +192,9 @@ class HomeController extends ChangeNotifier {
       String newIdCatalog = '';
 
       final categoryTitle = getCategoryTitleByCategoryId(_categoryId);
+      print('🔍 CategoryId: $_categoryId, CategoryTitle: $categoryTitle');
       
-      if (categoryTitle == 'Trang chủ') {
+      if (categoryTitle == 'Trang chủ' || _categoryId == 1) {
         // Kiểm tra dynamicCategoryIds có dữ liệu không
         if (dynamicCategoryIds.isEmpty) {
           print('⚠️ dynamicCategoryIds rỗng, đang tải lại dữ liệu danh mục...');
@@ -199,18 +210,25 @@ class HomeController extends ChangeNotifier {
           }
         }
         
-        // Tải lại toàn bộ sản phẩm từ tất cả danh mục
-        for (int id in dynamicCategoryIds) {
-          final moduleInfo = getModuleInfoByCategoryId(id);
-          if (moduleInfo == null) continue;
+        // Tải lại toàn bộ sản phẩm từ tất cả danh mục trong homeModules
+        print('🔄 Bắt đầu tải sản phẩm từ ${homeModules.length} home modules');
+        for (var module in homeModules) {
+          final int id = int.tryParse(module['idpart']?.toString() ?? '0') ?? 0;
+          if (id == 0) continue;
+          
+          print('🔍 Đang xử lý home module ID: $id');
+          print('🔍 ModuleInfo cho ID $id: $module');
 
-          final String module = moduleInfo['module'] ?? 'sanpham';
-          final String categoryTitle = moduleInfo['tieude'] ?? 'Không rõ tên danh mục';
+          final String moduleName = module['module'] ?? 'tintuc';
+          final String categoryTitle = module['tieude'] ?? 'Không rõ tên danh mục';
+          print('🔍 Tải sản phẩm cho ID $id: module=$moduleName, title=$categoryTitle');
 
           final Map<String, dynamic> response =
           await APIService.fetchModule(
               categoryId: id,
-              module: module);
+              module: moduleName);
+
+          print('🔍 Response cho ID $id: ${response['data']?.length ?? 0} sản phẩm');
 
           final String GetIdCatalog = response['idcatalog']?.toString() ?? '';
 
@@ -222,13 +240,14 @@ class HomeController extends ChangeNotifier {
           final enhanced = fetched.map<Map<String, dynamic>>((item) {
             return {
               ...item as Map<String, dynamic>,
-              'moduleType': module,
+              'moduleType': moduleName,
               'categoryId': id,
               'categoryTitle': categoryTitle,
             };
           }).toList();
 
           allProducts.addAll(enhanced);
+          print('🔍 Đã thêm ${enhanced.length} sản phẩm từ ID $id, tổng: ${allProducts.length}');
 
           // Cập nhật UI sau mỗi lần tải danh mục
           products = List.from(allProducts);
@@ -236,43 +255,79 @@ class HomeController extends ChangeNotifier {
           IdCatalogInitial = newIdCatalog;
           notifyListeners();
         }
+        
+        print('✅ Hoàn thành tải trang chủ: ${allProducts.length} sản phẩm từ ${homeModules.length} home modules');
       } else {
         final moduleInfo = getModuleInfoByCategoryId(_categoryId);
+        print('🔍 ModuleInfo: $moduleInfo');
         if (moduleInfo == null) {
-          products = [];
-          isLoading = false;
-          notifyListeners();
-          return;
+          print('❌ Không tìm thấy moduleInfo cho categoryId: $_categoryId');
+          print('🔍 Thử sử dụng logic fallback cho danhMucData');
+          
+          // Fallback: Sử dụng module mặc định dựa trên categoryId
+          String fallbackModule = 'tintuc'; // Mặc định là tintuc cho các danh mục tin tức
+          String categoryTitle = getCategoryTitleByCategoryId(_categoryId);
+          
+          print('🔍 Fallback - categoryId: $_categoryId, module: $fallbackModule, title: $categoryTitle');
+
+          final Map<String, dynamic> response =
+          await APIService.fetchModule(
+            categoryId: _categoryId,
+            module: fallbackModule,
+          );
+
+          print('🔍 Fallback Response cho ID $_categoryId: ${response['data']?.length ?? 0} sản phẩm');
+
+          final String getidcatalog = response['idcatalog'] ?? '';
+
+          newCategoryName = categoryTitle;
+          newIdCatalog = getidcatalog;
+
+          final List<dynamic> fetched = response['data'] ?? [];
+
+          allProducts = fetched.map<Map<String, dynamic>>((item) {
+            return {
+              ...item as Map<String, dynamic>,
+              'moduleType': fallbackModule,
+              'categoryId': _categoryId,
+              'categoryTitle': categoryTitle,
+            };
+          }).toList();
+
+          products = allProducts;
+          categoryName = newCategoryName;
+          IdCatalogInitial = newIdCatalog;
+        } else {
+          final String module = moduleInfo['module'] ?? 'sanpham';
+          final String categoryTitle = moduleInfo['tieude'] ?? 'Không rõ tên danh mục';
+          print('🔍 Module: $module, CategoryTitle: $categoryTitle');
+
+          final Map<String, dynamic> response =
+          await APIService.fetchModule(
+            categoryId: _categoryId,
+            module: module,
+          );
+
+          final String getidcatalog = response['idcatalog'] ?? '';
+
+          newCategoryName = categoryTitle;
+          newIdCatalog = getidcatalog;
+
+          final List<dynamic> fetched = response['data'] ?? [];
+
+          allProducts = fetched.map<Map<String, dynamic>>((item) {
+            return {
+              ...item as Map<String, dynamic>,
+              'moduleType': module,
+              'categoryId': _categoryId,
+              'categoryTitle': categoryTitle,
+            };
+          }).toList();
+
+          products = allProducts;
+          categoryName = newCategoryName;
+          IdCatalogInitial = newIdCatalog;
         }
-
-        final String module = moduleInfo['module'] ?? 'sanpham';
-        final String categoryTitle = moduleInfo['tieude'] ?? 'Không rõ tên danh mục';
-
-        final Map<String, dynamic> response =
-        await APIService.fetchModule(
-          categoryId: _categoryId,
-          module: module,
-        );
-
-        final String getidcatalog = response['idcatalog'] ?? '';
-
-        newCategoryName = categoryTitle;
-        newIdCatalog = getidcatalog;
-
-        final List<dynamic> fetched = response['data'] ?? [];
-
-        allProducts = fetched.map<Map<String, dynamic>>((item) {
-          return {
-            ...item as Map<String, dynamic>,
-            'moduleType': module,
-            'categoryId': _categoryId,
-            'categoryTitle': categoryTitle,
-          };
-        }).toList();
-
-        products = allProducts;
-        categoryName = newCategoryName;
-        IdCatalogInitial = newIdCatalog;
       }
 
       // Cache dữ liệu sản phẩm
