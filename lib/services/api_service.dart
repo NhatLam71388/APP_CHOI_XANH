@@ -35,46 +35,55 @@ class APIService {
     }
   }
 
-  static Future<String> _fetchCategoryTitle(int categoryId) async {
-    final uri = Uri.parse('$baseUrl/ww2/app.menu.dautrang.asp');
+  static Future<List<Map<String, dynamic>>> fetchHomeModules() async {
+    final uri = Uri.parse('$baseUrl/ww2/web.trangchu.module.content.asp');
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         if (decoded is List) {
-          final category = decoded.firstWhere(
-                (item) => item['idpart'] == categoryId.toString(),
-            orElse: () => null,
-          );
-          return category != null && category['tieude'] != null
-              ? category['tieude']
-              : 'Danh mục sản phẩm';
+          return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
         }
       }
-      print('Lỗi khi gọi API menu: ${response.statusCode}');
-      return 'Danh mục sản phẩm';
+      print('Lỗi khi gọi API home modules: ${response.statusCode}');
+      return [];
     } catch (e) {
-      print('Lỗi kết nối API menu: $e');
-      return 'Danh mục sản phẩm';
+      print('Lỗi kết nối API home modules: $e');
+      return [];
     }
   }
 
-  static Future<Map<String, dynamic>> fetchProductsByCategory({
-    required int categoryId,
-    required String ww2,
-    required String product,
-    required String extention,
-    required String idfilter,
-  }) async {
-    final id3 = idfilter.isEmpty ? '' : ',n$idfilter';
-    final url = '$baseUrl/ww2/module.laytimkiem.banhang.asp?id=$categoryId&id2=&id3=${Uri.encodeQueryComponent(id3)}&pageid=1';
+  static Future<int?> getCategoryIdByTitle(String title) async {
+    try {
+      final homeModules = await fetchHomeModules();
+      final result = homeModules.where(
+        (module) => module['tieude'] == title,
+      ).toList();
+      
+      if (result.isNotEmpty) {
+        return int.tryParse(result.first['idpart']?.toString() ?? '');
+      }
+      
+      return null;
+    } catch (e) {
+      print('Không tìm thấy categoryId cho tieude: $title');
+      return null;
+    }
+  }
 
-    print('Query params: {id: $categoryId, id2: , id3: $id3, pageid: 1}');
+  static Future<Map<String, dynamic>> fetchModule({
+    required int categoryId,
+    required String module,
+    int pageId = 1,
+    int sl = 10,
+  }) async {
+    final url = '$baseUrl/ww2/module.$module.asp?id=$categoryId&pageid=$pageId&sl=$sl';
+
+    print('Query params: {id: $categoryId, pageid: $pageId, sl: $sl}');
     print('Fetching products from: $url');
 
     try {
       final response = await http.get(Uri.parse(url)).timeout(Duration(seconds: 5));
-      final String tieude = await _fetchCategoryTitle(categoryId);
 
       // print('response.statusCode: ${response.statusCode}');
       // print('response.body: ${response.body}');
@@ -86,14 +95,14 @@ class APIService {
           final firstItem = decoded[0];
           if (firstItem.containsKey('data')) {
             return {
-              'tieude': tieude,
+              'tieude': '', // Sẽ được lấy từ home modules
               'idcatalog': categoryId.toString(),
               'data': firstItem['data'] ?? [],
             };
           } else {
             print('Phản hồi không chứa key "data"');
             return {
-              'tieude': tieude,
+              'tieude': '',
               'idcatalog': categoryId.toString(),
               'data': [],
             };
@@ -101,7 +110,7 @@ class APIService {
         } else {
           print('Phản hồi không hợp lệ');
           return {
-            'tieude': tieude,
+            'tieude': '',
             'idcatalog': categoryId.toString(),
             'data': [],
           };
@@ -109,16 +118,15 @@ class APIService {
       } else {
         print('Lỗi server: ${response.statusCode}');
         return {
-          'tieude': tieude,
+          'tieude': '',
           'idcatalog': categoryId.toString(),
           'data': [],
         };
       }
     } catch (e) {
       print('Lỗi kết nối hoặc xử lý API: $e');
-      final String tieude = await _fetchCategoryTitle(categoryId);
       return {
-        'tieude': tieude,
+        'tieude': '',
         'idcatalog': categoryId.toString(),
         'data': [],
       };
@@ -318,6 +326,10 @@ class APIService {
         final decoded = json.decode(response.body);
         if (decoded is List && decoded.isNotEmpty && decoded[0]['data'] != null) {
           final data = decoded[0]['data'] as List<dynamic>;
+          
+          // Lấy categoryId mặc định từ tieude "Trang chủ"
+          final defaultCategoryId = await getCategoryIdByTitle('Trang chủ') ?? 35001;
+          
           return data.map<Map<String, dynamic>>((item) {
             return {
               'id': item['id'].toString(),
@@ -327,7 +339,7 @@ class APIService {
               'image': item['hinhdaidien'] ?? '',
               'quantity': 1,
               'isSelect': false,
-              'categoryId': int.tryParse(item['categoryId']?.toString() ?? '0') ?? 35001,
+              'categoryId': int.tryParse(item['categoryId']?.toString() ?? '0') ?? defaultCategoryId,
             };
           }).toList();
         }

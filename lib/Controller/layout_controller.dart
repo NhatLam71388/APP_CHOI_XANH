@@ -15,10 +15,11 @@ import 'home.dart';
 import '../screens/cart/cart_page.dart';
 import '../screens/home/home_page.dart';
 import '../screens/profile/profile_page.dart';
+import '../services/api_service.dart';
 
 class AllPageController extends ChangeNotifier {
   int _currentIndex = 0;
-  final ValueNotifier<int> categoryNotifier = ValueNotifier(35001);
+  final ValueNotifier<int> categoryNotifier = ValueNotifier(35001); // Sẽ được cập nhật từ tieude
   final ValueNotifier<int> filterNotifier = ValueNotifier(0);
 
   final GlobalKey<favouritePageState> favouritePageKey = GlobalKey<favouritePageState>();
@@ -35,6 +36,17 @@ class AllPageController extends ChangeNotifier {
 
   String _currentPage = 'home';
   String _previousPage = 'home';
+
+  Future<void> initializeDefaultCategory() async {
+    try {
+      final categoryId = await APIService.getCategoryIdByTitle('Trang chủ');
+      if (categoryId != null) {
+        categoryNotifier.value = categoryId;
+      }
+    } catch (e) {
+      print('Không thể khởi tạo categoryId mặc định: $e');
+    }
+  }
 
   dynamic selectedProduct;
 
@@ -285,7 +297,8 @@ class AllPageController extends ChangeNotifier {
     switch (index) {
       case 0:
         _currentPage = 'home';
-        categoryNotifier.value = 35001;
+        // Khởi tạo categoryId từ tieude "Trang chủ"
+        initializeDefaultCategory();
         homePageKey.currentState?.fetchProducts();
         break;
       case 1:

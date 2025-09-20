@@ -19,6 +19,7 @@ class HomeController extends ChangeNotifier {
   String selectedFilterString = '';
 
   late Map<String, dynamic> danhMucData;
+  List<Map<String, dynamic>> homeModules = [];
 
   // Getters
   int get categoryId => _categoryId;
@@ -28,6 +29,8 @@ class HomeController extends ChangeNotifier {
   Future<void> init(ValueNotifier<int> categoryNotifier) async {
     _categoryId = categoryNotifier.value;
     await loadLoginStatus();
+    // Tải home modules từ API mới
+    await fetchHomeModules();
     await fetchDanhMucFromAPI();
     await fetchProducts();
   }
@@ -38,6 +41,63 @@ class HomeController extends ChangeNotifier {
     Global.email = prefs.getString('emailAddress') ?? '';
     Global.pass = prefs.getString('passWord') ?? '';
     print('emailadresshome: ${Global.email}');
+  }
+
+  Future<void> fetchHomeModules() async {
+    try {
+      homeModules = await APIService.fetchHomeModules();
+      print('Home modules loaded: ${homeModules.length} items');
+    } catch (e) {
+      print('Lỗi khi tải home modules: $e');
+      homeModules = [];
+    }
+  }
+
+  Map<String, dynamic>? getModuleInfoByCategoryId(int categoryId) {
+    try {
+      final result = homeModules.where(
+        (module) => module['idpart'] == categoryId.toString(),
+      ).toList();
+      
+      return result.isNotEmpty ? result.first : null;
+    } catch (e) {
+      print('Không tìm thấy module cho categoryId: $categoryId');
+      return null;
+    }
+  }
+
+  String getCategoryTitleByCategoryId(int categoryId) {
+    try {
+      // Tìm trong homeModules trước
+      final moduleInfo = getModuleInfoByCategoryId(categoryId);
+      if (moduleInfo != null && moduleInfo['tieude'] != null) {
+        return moduleInfo['tieude'];
+      }
+      
+      // Nếu không tìm thấy trong homeModules, tìm trong danhMucData
+      return findCategoryNameById(danhMucData, categoryId, parentOnly: true);
+    } catch (e) {
+      print('Không tìm thấy tieude cho categoryId: $categoryId');
+      return '';
+    }
+  }
+
+  int? getCategoryIdByTitle(String title) {
+    try {
+      // Tìm trong homeModules
+      final result = homeModules.where(
+        (module) => module['tieude'] == title,
+      ).toList();
+      
+      if (result.isNotEmpty) {
+        return int.tryParse(result.first['idpart']?.toString() ?? '');
+      }
+      
+      return null;
+    } catch (e) {
+      print('Không tìm thấy categoryId cho tieude: $title');
+      return null;
+    }
   }
 
   Future<void> fetchDanhMucFromAPI() async {
@@ -121,22 +181,37 @@ class HomeController extends ChangeNotifier {
       String newCategoryName = '';
       String newIdCatalog = '';
 
-      if (_categoryId == 35001) {
+      final categoryTitle = getCategoryTitleByCategoryId(_categoryId);
+      
+      if (categoryTitle == 'Trang chủ') {
+        // Kiểm tra dynamicCategoryIds có dữ liệu không
+        if (dynamicCategoryIds.isEmpty) {
+          print('⚠️ dynamicCategoryIds rỗng, đang tải lại dữ liệu danh mục...');
+          await fetchDanhMucFromAPI();
+          
+          // Nếu vẫn rỗng sau khi tải lại
+          if (dynamicCategoryIds.isEmpty) {
+            print('❌ Không thể tải danh mục, hiển thị màn hình trống');
+            products = [];
+            isLoading = false;
+            notifyListeners();
+            return;
+          }
+        }
+        
         // Tải lại toàn bộ sản phẩm từ tất cả danh mục
         for (int id in dynamicCategoryIds) {
-          final modules = categoryModules[id];
-          if (modules == null) continue;
+          final moduleInfo = getModuleInfoByCategoryId(id);
+          if (moduleInfo == null) continue;
+
+          final String module = moduleInfo['module'] ?? 'sanpham';
+          final String categoryTitle = moduleInfo['tieude'] ?? 'Không rõ tên danh mục';
 
           final Map<String, dynamic> response =
-          await APIService.fetchProductsByCategory(
-              ww2: modules[0],
-              product: modules[1],
-              extention: modules[2],
+          await APIService.fetchModule(
               categoryId: id,
-              idfilter: '0');
+              module: module);
 
-          final String categoryTitle =
-              response['tieude'] ?? 'Không rõ tên danh mục';
           final String GetIdCatalog = response['idcatalog']?.toString() ?? '';
 
           if (newCategoryName.isEmpty) newCategoryName = categoryTitle;
@@ -147,7 +222,7 @@ class HomeController extends ChangeNotifier {
           final enhanced = fetched.map<Map<String, dynamic>>((item) {
             return {
               ...item as Map<String, dynamic>,
-              'moduleType': modules[1],
+              'moduleType': module,
               'categoryId': id,
               'categoryTitle': categoryTitle,
             };
@@ -162,27 +237,24 @@ class HomeController extends ChangeNotifier {
           notifyListeners();
         }
       } else {
-        final modules = categoryModules[_categoryId];
-        if (modules == null) {
+        final moduleInfo = getModuleInfoByCategoryId(_categoryId);
+        if (moduleInfo == null) {
           products = [];
           isLoading = false;
           notifyListeners();
           return;
         }
 
+        final String module = moduleInfo['module'] ?? 'sanpham';
+        final String categoryTitle = moduleInfo['tieude'] ?? 'Không rõ tên danh mục';
+
         final Map<String, dynamic> response =
-        await APIService.fetchProductsByCategory(
-          ww2: modules[0],
-          product: modules[1],
-          extention: modules[2],
+        await APIService.fetchModule(
           categoryId: _categoryId,
-          idfilter: selectedFilterString,
+          module: module,
         );
 
-        final String categoryTitle =
-            response['tieude'] ?? 'Không rõ tên danh mục';
-        final String getidcatalog =
-            response['idcatalog'] ?? 'Không rõ tên danh mục';
+        final String getidcatalog = response['idcatalog'] ?? '';
 
         newCategoryName = categoryTitle;
         newIdCatalog = getidcatalog;
@@ -192,7 +264,7 @@ class HomeController extends ChangeNotifier {
         allProducts = fetched.map<Map<String, dynamic>>((item) {
           return {
             ...item as Map<String, dynamic>,
-            'moduleType': modules[1],
+            'moduleType': module,
             'categoryId': _categoryId,
             'categoryTitle': categoryTitle,
           };
@@ -214,7 +286,9 @@ class HomeController extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     } catch (e) {
-      print("Lỗi khi fetch sản phẩm: $e");
+      print("❌ Lỗi khi fetch sản phẩm: $e");
+      print("❌ CategoryId: $_categoryId, DynamicCategoryIds: $dynamicCategoryIds");
+      products = [];
       isLoading = false;
       notifyListeners();
     }

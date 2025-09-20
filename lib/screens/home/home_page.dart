@@ -70,10 +70,15 @@ class HomePageState extends State<HomePage> {
       value: homeController,
       child: Consumer<HomeController>(
         builder: (context, controller, child) {
-          const List<int> singleColumnCategories = [35139, 35142, 35149];
-          final crossAxisCount = singleColumnCategories.contains(controller.categoryId) ? 1 : 2;
-          final modules = categoryModules[controller.categoryId];
-          final isTinTuc = modules != null && modules[1] == 'tintuc';
+          final categoryTitle = controller.getCategoryTitleByCategoryId(controller.categoryId);
+          final isTinTuc = categoryTitle == 'Công nghệ'; // Dựa trên tieude từ API
+          final isContact = categoryTitle == 'Liên hệ';
+          final isHomePage = categoryTitle == 'Trang chủ';
+          final isSearch = categoryTitle == 'Tìm kiếm';
+          
+          // Các danh mục hiển thị 1 cột dựa trên tieude
+          const List<String> singleColumnTitles = ['Công nghệ'];
+          final crossAxisCount = singleColumnTitles.contains(categoryTitle) ? 1 : 2;
           final labelWidth = 190.0;
           final screenWidth = MediaQuery.of(context).size.width;
 
@@ -81,7 +86,7 @@ class HomePageState extends State<HomePage> {
 
           if (controller.isLoading) {
             bodyContent = LoadingWidget();
-          } else if (controller.categoryId == 35028) {
+          } else if (isContact) {
             bodyContent = ContactForm();
           } else if (controller.products.isEmpty) {
             bodyContent = RefreshIndicator(
@@ -102,7 +107,7 @@ class HomePageState extends State<HomePage> {
                 ],
               ),
             );
-          } else if (controller.categoryId == 0) {
+          } else if (isSearch) {
             bodyContent = SafeArea(
               child: RefreshIndicator(
                 color: const Color(0xff0066FF),
@@ -163,10 +168,10 @@ class HomePageState extends State<HomePage> {
                       ),
               ),
             );
-          } else if (controller.categoryId == 35001) {
+          } else if (isHomePage) {
             final Map<int, List<dynamic>> groupedByCategory = {};
             for (var product in controller.products) {
-              int catId = product['categoryId'] ?? 35001;
+              int catId = product['categoryId'] ?? controller.getCategoryIdByTitle('Trang chủ') ?? 35001;
               groupedByCategory.putIfAbsent(catId, () => []).add(product);
             }
 
@@ -177,16 +182,19 @@ class HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(8.0),
                 children: groupedByCategory.entries.map((entry) {
                   final categoryId = entry.key;
-                  if (categoryId == 35149) return const SizedBox.shrink();
+                  final categoryTitle = controller.getCategoryTitleByCategoryId(categoryId);
+                  
+                  // Bỏ qua các danh mục không mong muốn dựa trên tieude
+                  if (categoryTitle == 'Thư viện ảnh') return const SizedBox.shrink();
 
                   final productList = entry.value.where((p) {
-                    return categoryId == 35004 || hasValidImage(p);
+                    // Kiểm tra hình ảnh hợp lệ cho tất cả sản phẩm
+                    return hasValidImage(p);
                   }).toList();
 
                   if (productList.isEmpty) return const SizedBox.shrink();
 
-                  final categoryName =
-                  controller.findCategoryNameById(controller.danhMucData, categoryId, parentOnly: true);
+                  final categoryName = categoryTitle.isNotEmpty ? categoryTitle : 'Danh mục';
 
                   return SafeArea(
                     child: Column(
@@ -214,13 +222,13 @@ class HomePageState extends State<HomePage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount:
-                          singleColumnCategories.contains(categoryId) ? 1 : 2,
+                          singleColumnTitles.contains(categoryTitle) ? 1 : 2,
                           mainAxisSpacing: 4,
                           crossAxisSpacing: 4,
                           itemCount: productList.length,
                           itemBuilder: (context, index) {
                             final product = productList[index];
-                            return singleColumnCategories.contains(categoryId)
+                            return singleColumnTitles.contains(categoryTitle)
                                 ? NewsCard(
                                     product: product,
                                     categoryId: categoryId,
@@ -241,7 +249,8 @@ class HomePageState extends State<HomePage> {
             );
           } else {
             final visibleProducts = controller.products.where((product) {
-              return controller.categoryId == 35004 || hasValidImage(product);
+              // Kiểm tra hình ảnh hợp lệ cho tất cả sản phẩm
+              return hasValidImage(product);
             }).toList();
 
             bodyContent = RefreshIndicator(
@@ -268,7 +277,7 @@ class HomePageState extends State<HomePage> {
                         itemCount: visibleProducts.length,
                         itemBuilder: (context, index) {
                           final product = visibleProducts[index];
-                          return singleColumnCategories.contains(controller.categoryId)
+                          return singleColumnTitles.contains(categoryTitle)
                               ? NewsCard(
                                   product: product,
                                   categoryId: controller.categoryId,
@@ -286,7 +295,7 @@ class HomePageState extends State<HomePage> {
           }
 
           return Scaffold(
-            appBar: (controller.categoryId != 0 && controller.categoryId != 35001)
+            appBar: (!isSearch && !isHomePage)
                 ? AppBar(
                     backgroundColor: AppColors.backgroundColor,
                     titleSpacing: 8,
@@ -298,7 +307,7 @@ class HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.only(left: 8),
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          !controller.isLoading ? controller.categoryName : 'Đang tải...',
+                          !controller.isLoading ? categoryTitle : 'Đang tải...',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -309,7 +318,7 @@ class HomePageState extends State<HomePage> {
                     ),
                     iconTheme: const IconThemeData(color: Colors.black),
                     actions: [
-                      if (!isTinTuc && controller.categoryId != 0 && controller.categoryId != 35001)
+                      if (!isTinTuc && !isSearch && !isHomePage)
                         Container(
                           margin: const EdgeInsets.only(right: 8, left: 0),
                           width: 35,
