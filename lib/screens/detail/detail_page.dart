@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:html/parser.dart' as html_parser;
 
 import 'package:flutter_application_1/screens/detail/relatednews_card.dart';
 import 'package:flutter_application_1/screens/detail/relatedproduct_card.dart';
@@ -26,6 +27,7 @@ class DetailPage extends StatefulWidget {
   final void Function(dynamic product)? onProductTap;
   final String? modelType;
   final void Function(int?) gotoCart;
+  final dynamic productData; // [THAY_DOI_1]: Thêm dữ liệu sản phẩm/tin tức
 
   const DetailPage({
     super.key,
@@ -37,6 +39,7 @@ class DetailPage extends StatefulWidget {
     this.onProductTap,
     this.modelType,
     required this.gotoCart,
+    this.productData, // [THAY_DOI_2]: Optional cho dữ liệu sản phẩm/tin tức
   });
 
   @override
@@ -44,6 +47,12 @@ class DetailPage extends StatefulWidget {
 }
 
 class DetailPageState extends State<DetailPage> {
+  String _stripHtmlTags(String htmlString) {
+    if (htmlString.isEmpty) return '';
+    final document = html_parser.parse(htmlString);
+    return document.body?.text ?? '';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -98,7 +107,13 @@ class DetailPageState extends State<DetailPage> {
                   children: [
                     const SizedBox(height: 60),
                     DetailImageGallery(
-                      productId: widget.productId,
+                      itemId: widget.productId,
+                      moduleType: controller.moduleType,
+                      newsImage: controller.moduleType == 'tintuc'
+                          ? (widget.productData != null && widget.productData is Map 
+                              ? widget.productData['hinhdaidien'] 
+                              : (controller.productDetail != null ? controller.productDetail!['hinhdaidien'] : null))
+                          : null,
                       onImageSelected: (url) => controller.updateSelectedImage(url),
                     ),
                     const SizedBox(height: 16),
@@ -162,11 +177,31 @@ class DetailPageState extends State<DetailPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+          if (controller.moduleType == 'tintuc' && controller.productDetail?['ngaydang'] != null)
+            Text(
+              'Ngày đăng: ${controller.productDetail!['ngaydang']}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           const SizedBox(height: 8),
           Text(
             controller.title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
+          if (controller.moduleType == 'tintuc' && controller.productDetail?['noidungtomtat'] != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _stripHtmlTags(controller.productDetail!['noidungtomtat']),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -465,13 +500,18 @@ class DetailPageState extends State<DetailPage> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Text(
-              controller.moduleType == 'tintuc' ? 'Tin tức liên quan' : 'Sản phẩm liên quan',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  controller.moduleType == 'tintuc' ? 'Tin tức liên quan' : 'Sản phẩm liên quan',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
           ),
           controller.moduleType == 'tintuc'

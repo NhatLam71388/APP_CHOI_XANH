@@ -36,11 +36,17 @@ class DetailHtmlContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('===> htmlContent truyền vào: $htmlContent');
+    print('===> isLoading: $isLoading, isExpanded: $isExpanded');
+
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final safeHtmlContent = htmlContent?.trim().isNotEmpty == true
+    final hasContent = htmlContent != null && htmlContent!.trim().isNotEmpty;
+    print('===> hasContent: $hasContent');
+
+    final safeHtmlContent = hasContent
         ? htmlContent!
         : "<p>Không có nội dung</p>";
 

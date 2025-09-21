@@ -223,20 +223,18 @@ class _ProfilePageState extends State<ProfilePage> {
               if (_logic.isLogin)
                 ..._logic.settingsItems.map((item) {
                   return SettingItemCard(
-                    icon: _logic.getIconData(item['tieude'] ?? 'Unknown'),
+                    icon: _logic.getIconData(item['module'] ?? 'Unknown'),
                     title: item['tieude'] ?? 'Unknown',
                     iconRight: Icons.chevron_right,
-                    onTap: item['tieude'] == 'Thông tin cá nhân'
+                    onTap: item['module'] == 'HosoUV'
                         ? widget.onTapPersonalInfo
-                        : item['tieude'] == 'Thông báo'
+                        : item['module'] == 'Thongbaocongviec'
                         ? widget.onTapNotification
-                        : item['tieude'] == 'Danh mục quan tâm'
+                        : item['module'] == 'Quanlydanhmucquantam'
                         ? widget.onTapFavourite
-                        : item['tieude'] == 'Giỏ hàng của bạn'
-                        ? widget.onTapCart
-                        : item['tieude'] == 'Lịch sử đặt hàng'
+                        : item['module'] == 'Quanlylichsudathang'
                         ? widget.onTapCartHistory
-                        : item['tieude'] == 'Đăng thoát'
+                        : item['module'] == 'Logout'
                         ? () async {
                       await _logic.handleLogout(context);
                       await _logic.loadLoginStatus();

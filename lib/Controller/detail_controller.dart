@@ -43,9 +43,13 @@ class DetailController extends ChangeNotifier {
   bool get allowComments => productDetail?['chophepbinhluan'] == 'True';
 
   static String getModuleNameFromCategoryId(int categoryId) {
+    print('=> Tìm kiếm categoryId: $categoryId');
+    print('=> Các categoryId có sẵn: ${categoryModules.keys.toList()}');
+    
     if (categoryModules.containsKey(categoryId)) {
       final moduleParts = categoryModules[categoryId];
       if (moduleParts != null && moduleParts.length >= 3) {
+        print('=> Tìm thấy module: ${moduleParts[1]}');
         return moduleParts[1];
       } else {
         print('=> Không đủ phần tử hoặc null');
@@ -59,10 +63,21 @@ class DetailController extends ChangeNotifier {
   void initializeModuleType(int categoryId, String? modelType) {
     final categoryModule = getModuleNameFromCategoryId(categoryId);
     
-    if ((modelType ?? '').isEmpty) {
-      moduleType = categoryModule;
-    } else {
-      moduleType = modelType!;
+    // Nếu categoryModule không rỗng, sử dụng nó
+    if (categoryModule.isNotEmpty) {
+      moduleType = categoryModule.toLowerCase();
+    } 
+    // Nếu categoryModule rỗng nhưng modelType có chứa "tintuc", sử dụng "tintuc"
+    else if ((modelType ?? '').toLowerCase().contains('tintuc')) {
+      moduleType = 'tintuc';
+    }
+    // Nếu categoryModule rỗng nhưng modelType có chứa "sanpham", sử dụng "sanpham"
+    else if ((modelType ?? '').toLowerCase().contains('sanpham')) {
+      moduleType = 'sanpham';
+    }
+    // Mặc định sử dụng modelType
+    else {
+      moduleType = (modelType ?? '').toLowerCase();
     }
     
     print('categoryWidget: $modelType , categoryModule: $categoryModule ,moduleType: $moduleType');
@@ -172,10 +187,14 @@ class DetailController extends ChangeNotifier {
 
   Future<void> getProducts(String productId) async {
     try {
+      print('🔍 Đang tải related products/news cho ID: $productId, moduleType: $moduleType');
       List<dynamic> products = await APIService.getProductRelated(
         id: productId,
         modelType: moduleType,
       );
+
+      print('📦 Số lượng related items nhận được: ${products.length}');
+      print('📦 Dữ liệu related items: $products');
 
       final enhancedProducts = products.map((item) {
         return {
@@ -185,6 +204,7 @@ class DetailController extends ChangeNotifier {
       }).toList();
 
       productsRelated = enhancedProducts;
+      print('✅ Đã cập nhật productsRelated: ${productsRelated.length} items');
       notifyListeners();
     } catch (e) {
       print('❌ Lỗi khi tải sản phẩm liên quan: $e');

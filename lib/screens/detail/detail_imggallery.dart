@@ -4,12 +4,16 @@ import 'package:flutter_application_1/services/api_service.dart';
 import 'img_expand.dart';
 
 class DetailImageGallery extends StatefulWidget {
-  final String productId; // [THAY_DOI_1]: Nhận productId thay vì images
+  final String itemId; // [THAY_DOI_1]: Nhận itemId thay vì productId
+  final String moduleType; // [THAY_DOI_2]: Thêm moduleType để phân biệt sản phẩm/tin tức
+  final String? newsImage; // [THAY_DOI_3]: Hình ảnh tin tức từ dữ liệu đã có
   final Function(String) onImageSelected;
 
   const DetailImageGallery({
     super.key,
-    required this.productId,
+    required this.itemId,
+    required this.moduleType,
+    this.newsImage, // [THAY_DOI_4]: Optional cho tin tức
     required this.onImageSelected,
   });
 
@@ -30,16 +34,40 @@ class _DetailImageGalleryState extends State<DetailImageGallery> {
     _fetchImages(); // [THAY_DOI_4]: Gọi API để lấy ảnh
   }
 
-  // [THAY_DOI_5]: Hàm lấy danh sách ảnh từ API
+  // [THAY_DOI_5]: Hàm lấy danh sách ảnh từ API hoặc dữ liệu có sẵn
   Future<void> _fetchImages() async {
-    final fetchedImages = await APIService.fetchProductImages(widget.productId);
+    List<String> fetchedImages = [];
+    
+    print('🔍 DetailImageGallery - moduleType: ${widget.moduleType}');
+    print('🔍 DetailImageGallery - newsImage: ${widget.newsImage}');
+    
+    // Phân biệt giữa sản phẩm và tin tức
+    if (widget.moduleType.toLowerCase() == 'tintuc') {
+      // Tin tức: sử dụng hình ảnh từ dữ liệu đã có
+      if (widget.newsImage != null && widget.newsImage!.isNotEmpty) {
+        fetchedImages = [widget.newsImage!];
+        print('✅ Tin tức - sử dụng hình ảnh: ${widget.newsImage}');
+      } else {
+        print('❌ Tin tức - không có hình ảnh');
+      }
+    } else {
+      // Sản phẩm: gọi API để lấy danh sách ảnh
+      print('🛍️ Sản phẩm - gọi API lấy ảnh cho ID: ${widget.itemId}');
+      fetchedImages = await APIService.fetchProductImages(widget.itemId);
+    }
+    
     setState(() {
       images = fetchedImages;
       isLoading = false;
-      if (images.isNotEmpty) {
-        widget.onImageSelected(images[0]); // Gọi callback cho ảnh đầu tiên
-      }
+      print('📸 Tổng số ảnh: ${images.length}');
     });
+    
+    // Gọi callback sau khi setState hoàn thành
+    if (images.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onImageSelected(images[0]);
+      });
+    }
   }
 
   @override
@@ -67,9 +95,15 @@ class _DetailImageGalleryState extends State<DetailImageGallery> {
     }
 
     if (images.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 300,
-        child: Center(child: Text('Không có ảnh sản phẩm')),
+        child: Center(
+          child: Text(
+            widget.moduleType.toLowerCase() == 'tintuc' 
+              ? 'Không có ảnh tin tức' 
+              : 'Không có ảnh sản phẩm'
+          ),
+        ),
       );
     }
 
@@ -96,69 +130,71 @@ class _DetailImageGalleryState extends State<DetailImageGallery> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => FullScreenGalleryViewer(
-                            images: images, // [THAY_DOI_7]: Sử dụng images từ state
+                            images: images,
                             initialIndex: index,
                           ),
                         ),
                       );
                     },
                     child: Image.network(
-                      images[index], // [THAY_DOI_8]: Sử dụng images từ state
+                      images[index],
                       width: double.infinity,
                       fit: BoxFit.contain,
                     ),
                   );
                 },
               ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${currentIndex + 1}/${images.length}',
-                    style: const TextStyle(color: Colors.white),
+              // Ẩn số thứ tự ảnh nếu là tintuc
+              if (widget.moduleType.toLowerCase() != 'tintuc')
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${currentIndex + 1}/${images.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: SizedBox(
-            height: 60,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: images.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) => GestureDetector(
-                onTap: () => onImageSelected(index),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      color:
-                      currentIndex == index ? Colors.blue : Colors.black12,
+        // Ẩn thanh ảnh nhỏ nếu là tintuc
+        if (widget.moduleType.toLowerCase() != 'tintuc')
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: SizedBox(
+              height: 60,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => GestureDetector(
+                  onTap: () => onImageSelected(index),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        width: 2,
+                        color: currentIndex == index ? Colors.blue : Colors.black12,
+                      ),
                     ),
-                  ),
-                  child: Image.network(
-                    images[index], // [THAY_DOI_9]: Sử dụng images từ state
-                    width: 80,
-                    height: 50,
-                    fit: BoxFit.contain,
+                    child: Image.network(
+                      images[index],
+                      width: 80,
+                      height: 50,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -15,17 +15,10 @@ class RelatedNewsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = product['hinhdaidien'] ?? '';
-    final hasImages = imageUrl.isNotEmpty ||
-        (product['hinhanh'] != null && (product['hinhanh'] as List).isNotEmpty);
-
-    if (!hasImages) return const SizedBox.shrink();
-
     final title = product['tieude'] ?? 'Không có tiêu đề';
-    final price = product['gia'];
-    final hasPrice = price != null && price.toString().trim().isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.symmetric( vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: GestureDetector(
         onTap: onTap,
         child: Card(
@@ -58,23 +51,13 @@ class RelatedNewsCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      if (hasPrice)
-                        Text(
-                          price.toString(),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
                     ],
                   ),
                 ),

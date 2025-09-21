@@ -244,6 +244,7 @@ class AllPageController extends ChangeNotifier {
       cartitemCount: cartItemCountNotifier,
       productId: productId,
       categoryNotifier: categoryNotifier,
+      productData: product, // [THAY_DOI_1]: Truyền toàn bộ dữ liệu sản phẩm/tin tức
       onBack: () {
         if (_productDetailStack.isNotEmpty) {
           final previousProduct = _productDetailStack.removeLast();

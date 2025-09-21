@@ -73,7 +73,9 @@ class PageCartState extends State<PageCart> {
               backgroundColor: AppColors.backgroundColor,
               body: RefreshIndicator(
                 color: Color(0xff0066FF),
-                onRefresh: () => controller.loadCartItems(widget.cartitemCount),
+                onRefresh: () async {
+                  await controller.loadCartItems(widget.cartitemCount);
+                },
                 child: SafeArea(
                   child: Stack(
                     children: [
@@ -215,6 +217,7 @@ class PageCartState extends State<PageCart> {
                                         verticalOffset: 50.0,
                                         child: FadeInAnimation(
                                           child: ItemCart(
+                                            key: ValueKey(item.id), // Thêm dòng này!
                                             cartitemCount: widget.cartitemCount,
                                             userId: Global.email,
                                             item: item,
@@ -226,20 +229,17 @@ class PageCartState extends State<PageCart> {
                                               controller.updateItemSelection(item, value);
                                             },
                                             onIncrease: () async {
-                                              // Chỉ cập nhật local state, không reload giỏ hàng
                                               item.quantity++;
                                               controller.notifyListeners();
                                             },
                                             onDecrease: () async {
                                               if (item.quantity > 1) {
-                                                // Chỉ cập nhật local state, không reload giỏ hàng
                                                 item.quantity--;
                                                 controller.notifyListeners();
                                               }
                                             },
                                             OnChanged: () async {
-                                              // Không cần reload giỏ hàng khi chỉ thay đổi số lượng
-                                              // await controller.loadCartItems(widget.cartitemCount);
+                                              await controller.loadCartItems(widget.cartitemCount);
                                             },
                                           ),
                                         ),

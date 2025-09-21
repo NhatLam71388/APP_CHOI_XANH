@@ -54,23 +54,29 @@ class ProfileLogic {
     }
   }
 
-  IconData getIconData(String title) {
-    switch (title) {
-      case 'Thông tin cá nhân':
+  IconData getIconData(String module) {
+    switch (module) {
+      case 'HosoUV':
         return Icons.person;
-      case 'Thông báo':
-        return Icons.notifications;
-      case 'Danh mục quan tâm':
+      case 'cvungvien.daotaochuyenmon':
+        return Icons.school;
+      case 'cvungvien.kinhnghiem':
+        return Icons.work;
+      case 'cvungvien.kynang':
+        return Icons.star;
+      case 'cvungvien.nguonkiemtra':
+        return Icons.verified_user;
+      case 'ChiaseHS':
+        return Icons.description;
+      case 'Quanlydanhmucquantam':
         return Icons.favorite;
-      case 'Giỏ hàng của bạn':
-        return Icons.shopping_cart;
-      case 'Lịch sử đặt hàng':
-        return Icons.work_history_outlined;
-      case 'Quản lý bình luận':
-        return Icons.comment;
-      case 'Mật khẩu':
+      case 'Thongbaocongviec':
+        return Icons.notifications;
+      case 'Quanlylichsudathang':
+        return Icons.history;
+      case 'MatkhauNTD':
         return Icons.lock;
-      case 'Đăng thoát':
+      case 'Logout':
         return Icons.logout_rounded;
       default:
         return Icons.info;
