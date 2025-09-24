@@ -49,7 +49,7 @@ class CustomButton extends StatelessWidget {
 
     return Container(
       height: height,
-      width: double.infinity,
+      width: 250,
       decoration: isOutlined
           ? BoxDecoration(
               color: Colors.white,

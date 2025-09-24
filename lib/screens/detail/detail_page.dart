@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_application_1/widgets/button_widget.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import 'package:flutter_application_1/screens/detail/relatednews_card.dart';
@@ -272,21 +273,7 @@ class DetailPageState extends State<DetailPage> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: ElevatedButton(
-                  onPressed: () => controller.loadComments(widget.productId, loadMore: true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text('Xem thêm bình luận'),
-                ),
+                child: CustomButton(text: "Xem thêm bình luận", onPressed: () => controller.loadComments(widget.productId, loadMore: true)),
               ),
             ),
           if (controller.allowComments) ...[

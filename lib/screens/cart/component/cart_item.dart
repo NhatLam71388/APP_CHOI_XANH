@@ -107,7 +107,6 @@ class _ItemCartState extends State<ItemCart> with TickerProviderStateMixin {
     );
 
     if (success) {
-      showToast('Đã xóa sản phẩm khỏi giỏ hàng', backgroundColor: Colors.green);
       if (widget.OnChanged != null) widget.OnChanged!();
     } else {
       showToast('Xóa sản phẩm thất bại', backgroundColor: Colors.red);

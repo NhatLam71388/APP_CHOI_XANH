@@ -333,7 +333,6 @@ class APICartService {
           return items;
         } else {
           print('❌ API trả về dữ liệu không hợp lệ');
-          showToast('Dữ liệu giỏ hàng không hợp lệ', backgroundColor: Colors.red);
           if (cartitemCount != null) {
             cartitemCount.value = 0;
           }

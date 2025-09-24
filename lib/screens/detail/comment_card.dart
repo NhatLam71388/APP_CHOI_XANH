@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
+import '../../services/api_service.dart';
 import '../../services/api_service.dart';
 
 // Color scheme - Green theme
@@ -42,6 +44,19 @@ class CommentCard extends StatefulWidget {
     this.onLikeUpdated,
     this.onReplySubmitted,
   });
+
+  static String formatDate(String dateStr) {
+    try {
+      // Định dạng đầu vào: M/d/yyyy h:mm:ss a
+      final inputFormat = DateFormat('M/d/yyyy h:mm:ss a');
+      final dateTime = inputFormat.parse(dateStr);
+      // Định dạng đầu ra: dd/MM/yyyy
+      return DateFormat('dd/MM/yyyy').format(dateTime);
+    } catch (e) {
+      print('Lỗi định dạng ngày: $e, chuỗi đầu vào: $dateStr');
+      return dateStr; // Trả về chuỗi gốc nếu lỗi
+    }
+  }
 
   @override
   State<CommentCard> createState() => _CommentCardState();
@@ -395,19 +410,19 @@ class _CommentCardState extends State<CommentCard>
                                   ),
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                CommentCard.formatDate(widget.ngaydang), // Sử dụng hàm formatDate
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                child: Text(
-                              widget.ngaydang,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
                               ),
                             ),
                           ],
@@ -985,7 +1000,7 @@ class _ReplyCardState extends State<ReplyCard>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          widget.ngaydang,
+                          CommentCard.formatDate(widget.ngaydang),
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 10,

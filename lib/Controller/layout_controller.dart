@@ -15,7 +15,6 @@ import 'home.dart';
 import '../screens/cart/cart_page.dart';
 import '../screens/home/home_page.dart';
 import '../screens/profile/profile_page.dart';
-import '../services/api_service.dart';
 
 class AllPageController extends ChangeNotifier {
   int _currentIndex = 0;

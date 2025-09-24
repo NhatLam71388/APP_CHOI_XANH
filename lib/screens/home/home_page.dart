@@ -9,7 +9,6 @@ import 'package:flutter_application_1/widgets/until.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/category_model.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/loading_widget.dart';
 import '../contact/contact.dart';
@@ -321,7 +320,7 @@ class HomePageState extends State<HomePage> {
                     ),
                     iconTheme: const IconThemeData(color: Colors.black),
                     actions: [
-                      if (!isTinTuc && !isSearch && !isHomePage)
+                      if (!isTinTuc && !isSearch && !isHomePage && !isContact)
                         Container(
                           margin: const EdgeInsets.only(right: 8, left: 0),
                           width: 35,

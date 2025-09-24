@@ -129,40 +129,11 @@ class _OrderConfirmationSheetState extends State<OrderConfirmationSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(width: 0.5, color: Colors.black38),
-                        ),
-                        backgroundColor: Colors.white,
-                      ),
-                      child: const Text(
-                        'Hủy',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
+                    child: CustomButton.outlined(text: "Hủy", onPressed: () => Navigator.of(context).pop()),
                   ),
                   const SizedBox(width: 30),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: _handleConfirm,
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        backgroundColor: Color(0xff0066FF),
-                      ),
-                      child: const Text(
-                        'Xác nhận',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
+                    child: CustomButton(text: "Xác nhận", onPressed: _handleConfirm)),
                 ],
               ),
             ],

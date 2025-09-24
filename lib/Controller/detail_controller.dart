@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:html/parser.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/category_model.dart';
@@ -45,7 +43,7 @@ class DetailController extends ChangeNotifier {
   static String getModuleNameFromCategoryId(int categoryId) {
     print('=> Tìm kiếm categoryId: $categoryId');
     print('=> Các categoryId có sẵn: ${categoryModules.keys.toList()}');
-    
+
     if (categoryModules.containsKey(categoryId)) {
       final moduleParts = categoryModules[categoryId];
       if (moduleParts != null && moduleParts.length >= 3) {
