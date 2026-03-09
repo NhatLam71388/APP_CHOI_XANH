@@ -9,5 +9,5 @@
 * [cite_start]**Tối ưu hóa Model:** Xử lý kỹ thuật tinh lọc dữ liệu (mapping) từ API, loại bỏ các trường thừa để tối ưu bộ nhớ và giúp ứng dụng vận hành mượt mà hơn[cite: 283, 284].
 
 #### Hình ảnh minh họa:
-![Giao diện danh mục Tivi và Máy vi tính](images/demo_tivi_pc.png)
+![Giao diện danh mục Tivi và Máy vi tính](BoLoc.png)
 [cite_start]*Hình: Giao diện danh mục sản phẩm được render động từ API.*
